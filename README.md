@@ -3,122 +3,134 @@
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-UNKNOWN-lightgrey)](LICENSE)
 
-A lightweight prototype to extract polygons from map images and export them as GeoJSON — ideal for quick inspection, prototyping and research.
+A free, open-source tool to convert map images (PNG, JPG) and SVG files into GeoJSON format, using AI and computer vision. Born as an alternative to expensive databases like Geochron (500€), enabling accessible geospatial data creation.
 
 ---
 
 ## Table of Contents
 - [Highlights](#highlights)
+- [Background](#background)
 - [Quick Start](#quick-start)
-- [Usage (interactive)](#usage-interactive)
-- [CLI / Automation hint](#cli--automation-hint)
-- [Algorithm (overview)](#algorithm-overview)
-- [Calibration & Projection](#calibration--projection)
+- [Usage](#usage)
+- [Features](#features)
+- [Algorithm Overview](#algorithm-overview)
 - [Outputs](#outputs)
-- [Limitations & Next Steps](#limitations--next-steps)
+- [Limitations & Roadmap](#limitations--roadmap)
 - [Contributing](#contributing)
+- [Documentation](#documentation)
 - [References](#references)
 
 ---
 
 ## Highlights
-- 🎨 K-Means color segmentation + contour extraction  
-- 🧭 Optional linear pixel → lon/lat calibration (Italy preset)  
-- 📦 Exports GeoJSON FeatureCollection and debug images (_segmented.png, _regions.png_)  
-- 🔬 Prototype for research; roadmap in FEASIBILITY folder
+- 🆓 **Free & Open-Source**: No costs, ideal for students and researchers.
+- 🎨 **AI-Powered**: Uses segmentation and contour detection for automatic polygon extraction.
+- 🗺️ **Multiple Inputs**: Supports images (PNG, JPG) and SVG files.
+- 📦 **GeoJSON Export**: Outputs standard GeoJSON FeatureCollection.
+- 🔬 **Prototype**: Extensible for research and education.
+
+---
+
+## Background
+This project was created by students to provide free access to geospatial data. Commercial services like Geochron charge 500€ for databases, making them inaccessible for educational projects. Our tool leverages open-source libraries (OpenCV, GDAL, PyTorch) to convert simple map images into usable GeoJSON files.
 
 ---
 
 ## Quick Start
-Prereqs: Python 3.8+, OpenCV, NumPy, Shapely (GeoPandas optional)
+### Prerequisites
+- Python 3.8+
+- Libraries: OpenCV, NumPy, Shapely, PyTorch (optional for AI)
 
-Install (example):
+### Installation
 ```bash
-pip install opencv-python numpy shapely
-# GeoPandas/rasterio recommended via conda if needed
+# Create virtual environment
+python -m venv venv
+venv\Scripts\activate  # Windows
+
+# Install dependencies
+pip install opencv-python numpy shapely geopy pyproj pillow matplotlib
+# For AI features
+pip install torch torchvision ultralytics
 ```
 
-Run prototype (interactive):
+### Run
 ```bash
-python "test con ai/image_to_geojson_auto.py"
+# Image to GeoJSON with AI
+python "src/test con ai/image_to_geojson_auto.py"
+
+# SVG to GeoJSON
+python "src/test svg to geojson/Svg_to_Geojson_Converter.py"
 ```
 
 ---
 
-## Usage (interactive)
-1. Start the script and enter the image path when prompted.  
-2. Choose calibration:
-   - 1 — Italy preset (lat 36.0–47.5, lon 6.5–18.5)
-   - 2 — Manual bounds
-   - 3 — Skip (pixel coordinates)
-3. Results are written next to the image:
-   - image_segmented.png — K-Means visualization  
-   - image_regions.png — annotated polygons and centroids  
-   - image.geojson — GeoJSON FeatureCollection
+## Usage
+1. Prepare your map image or SVG file.
+2. Run the appropriate script.
+3. Choose calibration (Italy preset or manual).
+4. Outputs: GeoJSON file and debug images.
 
-Tip: wrap paths in quotes if they contain spaces.
+For detailed pipeline, see `src/test con ai/pipeline.md`.
 
 ---
 
-## CLI / Automation hint
-The script is interactive; for automation add argparse with flags, e.g.:
-```
---image PATH --n_colors N --min_area PIXELS --calibration [italy|manual|none] --lat_min --lat_max --lon_min --lon_max
-```
-Implementing this enables batch processing and CI-friendly runs.
+## Features
+- **Image Conversion**: Extract polygons from map images using K-Means segmentation and contour detection.
+- **SVG Support**: Convert SVG paths to GeoJSON.
+- **Georeferencing**: Optional pixel-to-lat/lon calibration.
+- **AI Integration**: Prototype with deep learning for better segmentation.
+- **Debug Visuals**: Segmented and region overlay images.
 
 ---
 
-## Algorithm (overview)
-- Read image with OpenCV and reshape pixels for clustering.  
-- K-Means clustering groups pixels into N colors.  
-- For each cluster: build mask → find contours → filter by area and color heuristics (remove water/white/black) → simplify contour → compute centroid.  
-- Deduplicate overlapping regions and export top candidates as polygons.  
-- Optional linear pixel→lat/lon mapping using bounding box.
+## Algorithm Overview
+- **Preprocessing**: Image segmentation with K-Means or AI models.
+- **Contour Detection**: Use OpenCV to find shapes.
+- **Filtering**: Remove noise, water, etc., based on heuristics.
+- **Georeferencing**: Map pixels to coordinates.
+- **Export**: Generate GeoJSON with properties (id, color, area).
 
----
-
-## Calibration & Projection
-- Italy preset: lat 36.0–47.5, lon 6.5–18.5 (linear map).
-- Manual: provide lat/lon bounds at runtime.
-> Note: calibration is linear and does not handle rotation/skew — for production use GCPs + GDAL/pyproj/affine transforms are required.
+See `src/test con ai/pipeline.md` for full architecture.
 
 ---
 
 ## Outputs
-GeoJSON Feature properties:
-- id: region_x  
-- color: average RGB string (rgb(r,g,b))  
-- area_pixels: integer
-
-Debug artifacts:
-- *_segmented.png — visual cluster map  
-- *_regions.png — polygons + centroids overlay
-
-Open GeoJSON at: https://geojson.io for quick visualization.
+- **GeoJSON File**: FeatureCollection with polygons.
+- **Debug Images**: `_segmented.png` (clusters), `_regions.png` (polygons).
+- Visualize at https://geojson.io.
 
 ---
 
-## Limitations & Next Steps
-- Fragile on complex maps (labels, textures).  
-- No topology validation (overlaps, holes).  
-- Linear calibration only.  
-Recommended improvements:
-- Semantic segmentation (U-Net / DeepLab).  
-- Robust georeferencing (GCPs, affine, GDAL).  
-- Integration with GeoPandas for reprojection and topology cleaning.  
-- Add CLI, tests and batch processing.
+## Limitations & Roadmap
+- Works best on simple maps; complex ones may need manual tweaks.
+- Linear calibration; advanced georeferencing planned.
+- Future: Web interface, batch processing, better AI models.
+
+See `docs/feasibility/StudioDiFattibilità.md` for detailed feasibility study.
 
 ---
 
 ## Contributing
-Contributions welcome: improve segmentation, add CLI, integrate reprojection, provide sample images. Please open issues / PRs with reproducible steps and sample data.
+We welcome contributions! Open issues or PRs. Focus areas:
+- Improve AI segmentation.
+- Add more input formats.
+- Enhance georeferencing.
+
+For requirements gathering, see `docs/feasibility/requirements/`.
+
+---
+
+## Documentation
+- **Feasibility Study**: `docs/feasibility/StudioDiFattibilità.md`
+- **Requirements**: `docs/feasibility/requirements/Analisi_Concorrenza.md`, `Suggerimenti_Spontanei.md`
+- **Pipeline**: `src/test con ai/pipeline.md`
+- **Changelog**: `CHANGELOG.md`
 
 ---
 
 ## References
-- Prototype script: `test con ai/image_to_geojson_auto.py`  
-- Feasibility study: `FEASIBILITY/StudioDiFattibilità.md`  
-- Changelog: `CHANGELOG.md`
+- Scripts: `src/test con ai/`, `src/test svg to geojson/`
+- Inspired by open-source GIS tools like QGIS and GDAL.
+- For feedback, open GitHub Discussions.
 
 ---
