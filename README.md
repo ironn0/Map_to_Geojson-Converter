@@ -34,6 +34,16 @@ A free, open-source tool to convert map images (PNG, JPG) and SVG files into Geo
 ## Background
 This project was created by students to provide free access to geospatial data. Commercial services like Geochron charge 500€ for databases, making them inaccessible for educational projects. Our tool leverages open-source libraries (OpenCV, GDAL, PyTorch) to convert simple map images into usable GeoJSON files.
 
+### 🎯 What It Does
+
+Transform map images into GeoJSON automatically:
+
+| Input Map | Output (Detected Regions) |
+|-----------|---------------------------|
+| ![Input](examples/italy_input.png) | ![Output](examples/italy_output.png) |
+
+The tool extracts colored regions, identifies boundaries, and generates GeoJSON files ready for use in GIS applications.
+
 ---
 
 ## Quick Start
