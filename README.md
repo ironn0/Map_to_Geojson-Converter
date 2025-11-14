@@ -48,9 +48,7 @@ python -m venv venv
 venv\Scripts\activate  # Windows
 
 # Install dependencies
-pip install opencv-python numpy shapely geopy pyproj pillow matplotlib
-# For AI features
-pip install torch torchvision ultralytics
+pip install -r requirements.txt
 ```
 
 ### Run
@@ -124,6 +122,9 @@ For requirements gathering, see `docs/feasibility/requirements/`.
 - **Feasibility Study**: `docs/feasibility/StudioDiFattibilità.md`
 - **Requirements**: `docs/feasibility/requirements/Analisi_Concorrenza.md`, `Suggerimenti_Spontanei.md`
 - **Pipeline**: `src/test con ai/pipeline.md`
+- **Contributing**: `CONTRIBUTING.md`
+- **Examples**: `examples/`
+- **Tests**: `tests/`
 - **Changelog**: `CHANGELOG.md`
 
 ---

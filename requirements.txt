@@ -1,0 +1,21 @@
+# requirements.txt for Map to GeoJSON Converter
+
+# Core dependencies
+opencv-python>=4.5.0
+numpy>=1.21.0
+shapely>=1.8.0
+pillow>=8.0.0
+
+# AI/ML (optional, for advanced features)
+torch>=1.10.0
+torchvision>=0.11.0
+ultralytics>=8.0.0  # For YOLOv8
+
+# GIS and utilities
+geopy>=2.2.0
+pyproj>=3.3.0
+scipy>=1.7.0
+matplotlib>=3.5.0
+
+# Optional for extended features
+geopandas>=0.10.0  # For advanced GIS operations
