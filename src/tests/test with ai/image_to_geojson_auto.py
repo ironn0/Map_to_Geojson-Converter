@@ -23,7 +23,7 @@ class KMeansExtractor:
         
         print(f"✅ Immagine: {self.width}x{self.height}px")
     
-    def segment_by_color(self, n_colors: int = 25, min_area: int = 2000):
+    def segment_by_color(self, n_colors: int = 40, min_area: int = 500):
         """Segmenta l'immagine in regioni di colore usando K-Means"""
         print(f"\n🎨 Segmentazione in {n_colors} colori...")
         
@@ -75,21 +75,17 @@ class KMeansExtractor:
                 mean_color_bgr = cv2.mean(self.image, mask=mask_single)[:3]
                 b, g, r = mean_color_bgr
                 
-                # FILTRI
-                # Escludi acqua azzurra
-                if b > 200 and g > 150 and r < 180:
+                # FILTRI BASE (meno restrittivi)
+                # Escludi solo bianco puro
+                if min(r, g, b) > 240:
                     continue
                 
-                # Escludi bianco/grigio
-                if min(r, g, b) > 215:
+                # Escludi nero puro
+                if max(r, g, b) < 30:
                     continue
                 
-                # Escludi nero
-                if max(r, g, b) < 50:
-                    continue
-                
-                # Semplifica contorno
-                epsilon = 0.001 * cv2.arcLength(contour, True)
+                # Semplifica contorno (minimo per massima fedeltà)
+                epsilon = 0.0002 * cv2.arcLength(contour, True)
                 approx = cv2.approxPolyDP(contour, epsilon, True)
                 points = [(int(p[0][0]), int(p[0][1])) for p in approx]
                 
@@ -279,6 +275,43 @@ class KMeansExtractor:
             print(f"✅ Immagine: {output}")
         
         return vis
+    
+    def interactive_selection(self):
+        """Selezione interattiva delle regioni da mantenere"""
+        print("\n🎯 SELEZIONE INTERATTIVA REGIONI")
+        print("="*60)
+        print("Per ogni regione, decidi se tenerla o scartarla\n")
+        
+        selected_regions = []
+        
+        for idx, region in enumerate(self.regions):
+            print(f"\n--- Regione {idx + 1}/{len(self.regions)} ---")
+            print(f"   ID: {region['id']}")
+            print(f"   Colore: {region['color']}")
+            print(f"   Area: {region['area']:.0f} pixel²")
+            print(f"   Centroide: {region['centroid']}")
+            
+            while True:
+                choice = input("   Tenere questa regione? [S/n/q per quit]: ").strip().lower()
+                
+                if choice in ['q', 'quit']:
+                    print("\n⚠️ Selezione interrotta")
+                    self.regions = selected_regions
+                    return len(selected_regions)
+                
+                if choice in ['', 's', 'y', 'yes', 'si', 'sì']:
+                    selected_regions.append(region)
+                    print("   ✅ Aggiunta")
+                    break
+                elif choice in ['n', 'no']:
+                    print("   ❌ Scartata")
+                    break
+                else:
+                    print("   ⚠️ Risposta non valida. Usa S (sì) o N (no)")
+        
+        self.regions = selected_regions
+        print(f"\n✅ {len(selected_regions)} regioni selezionate")
+        return len(selected_regions)
 
 
 def main():
@@ -293,14 +326,24 @@ def main():
         
         # Segmenta per colore
         extractor.segment_by_color(
-            n_colors=25,        # Numero cluster colori
-            min_area=2000       # Area minima regione
+            n_colors=60,        # Più cluster per migliore distinzione bordi
+            min_area=300        # Cattura tutte le regioni
         )
         
         if not extractor.regions:
             print("\n❌ Nessuna regione trovata!")
             print("   Prova ad aumentare n_colors o abbassare min_area")
             return
+        
+        # Selezione interattiva
+        print("\n" + "="*60)
+        choice = input("🔍 Vuoi selezionare manualmente le regioni? [s/N]: ").strip().lower()
+        
+        if choice in ['s', 'y', 'yes', 'si', 'sì']:
+            count = extractor.interactive_selection()
+            if count == 0:
+                print("\n❌ Nessuna regione selezionata!")
+                return
         
         # Calibrazione
         print("\n" + "="*60)
