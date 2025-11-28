@@ -9,12 +9,12 @@ This folder contains sample inputs and outputs to demonstrate what the tool can 
 The Map to GeoJSON Converter takes map images like this:
 
 ### Input: Map Image with Regions
-![Input Map](italy_input.png)
+![Input Map](https://ironn0.github.io/ironn0/assets/italy_input.png)
 
 And converts them to GeoJSON format, extracting polygons for each region:
 
 ### Output: Extracted Regions as GeoJSON
-![Output GeoJSON](italy_output.png)
+![Output GeoJSON](https://ironn0.github.io/ironn0/assets/italy_output.png)
 
 The tool automatically:
 - Detects colored regions in the map
