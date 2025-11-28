@@ -9,12 +9,12 @@ This folder contains sample inputs and outputs to demonstrate what the tool can 
 The Map to GeoJSON Converter takes map images like this:
 
 ### Input: Map Image with Regions
-![Input Map](italy_input.png)
+![Input Map](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/italy_input.png)
 
 And converts them to GeoJSON format, extracting polygons for each region:
 
 ### Output: Extracted Regions as GeoJSON
-![Output GeoJSON](italy_output.png)
+![Output GeoJSON](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/italy_output.png)
 
 The tool automatically:
 - Detects colored regions in the map
@@ -56,3 +56,21 @@ The converter will:
 - Assign properties (id, color, area) to each region
 
 Perfect for students who need free geospatial data from map images!
+
+---
+
+## 🆕 Georeferencer (Work in Progress)
+
+A new approach using **Point-in-Polygon** instead of shape matching:
+
+![Georeferencer Output](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/georeferencer_italy.png)
+
+### Why It's Better
+- Uses real geographic coordinates instead of shape comparison
+- User selects the map area visually on a world map
+- Checkboxes to filter out unwanted regions (sea, background)
+
+### Why It's Not Finished
+- Calibration needs fine-tuning for perfect alignment
+- Only Italy GADM database included so far
+- Edge regions may fall outside expected boundaries

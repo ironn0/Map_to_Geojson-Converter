@@ -1,4 +1,5 @@
 # Map to GeoJSON Converter
+[![Version](https://img.shields.io/badge/version-0.0.5-blue)](https://github.com/ironn0/Map_to_Geojson-Converter/releases/tag/v0.0.5)
 [![Status](https://img.shields.io/badge/status-prototype-orange)](https://github.com/)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
@@ -32,7 +33,7 @@ A free, open-source tool to convert map images (PNG, JPG) and SVG files into Geo
 ---
 
 ## Background
-This project was created by students to provide free access to geospatial data. Commercial services like Geochron charge 500€ for databases, making them inaccessible for educational projects. Our tool leverages open-source libraries (OpenCV, GDAL, PyTorch) to convert simple map images into usable GeoJSON files.
+This project was created by students to provide free access to geospatial data. Commercial services charge money for databases, making them inaccessible for educational projects. Our tool leverages open-source libraries (OpenCV, GDAL, PyTorch) to convert simple map images into usable GeoJSON files.
 
 ### 🎯 What It Does
 
@@ -40,7 +41,7 @@ Transform map images into GeoJSON automatically:
 
 | Input Map | Output (Detected Regions) |
 |-----------|---------------------------|
-| ![Input](examples/italy_input.png) | ![Output](examples/italy_output.png) |
+| ![Input](https://ironn0.github.io/ironn0/assets/italy_input.png) | ![Output](https://ironn0.github.io/ironn0/assets/italy_output.png) |
 
 The tool extracts colored regions, identifies boundaries, and generates GeoJSON files ready for use in GIS applications.
 
