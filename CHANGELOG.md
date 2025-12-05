@@ -6,11 +6,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Combined changelog for Map to GeoJSON Converter.
 
-## [Unreleased && TODO]
+## [TODO]
+- Add changes for next releases 
 
-- Improved: input validation and error messages.
-- Fixed: minor issues with exporting multipart geometries.
-- Documentation: usage examples and CLI options to be completed.
+---
+
+## [0.0.8] (2025-12-06)
+
+### 🎉 Features
+
+* SAM (Segment Anything Model) integration with facebook/sam-vit-huge for automatic region segmentation
+* Leaflet-based interactive map for drag-and-drop image georeferencing
+* Territory selection interface - users can click to toggle territories on/off before export
+* Bounds refinement feature - preview territories as green overlays and adjust bounds interactively
+* Optimized SAM performance with 8 points_per_side (4x speed improvement)
+
+### 🛠️ Fixes
+
+* Download management - fixed duplicate file creation (bounds.json, selected_territories.json always overwrite)
+* UI layout improvements - 2-column scrollable layout for better visibility of all controls
+* Image preview integration with Leaflet georeferencing workflow
+
+### 📄 Documentation
+
+* Updated README.md with new SAM workflow and interactive features
+* Added feature documentation for bounds refinement and territory selection
 
 ---
 

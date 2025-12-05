@@ -1,5 +1,5 @@
 # Map to GeoJSON Converter
-[![Version](https://img.shields.io/badge/version-0.0.5-blue)](https://github.com/ironn0/Map_to_Geojson-Converter/releases/tag/v0.0.5)
+[![Version](https://img.shields.io/badge/version-0.0.7-blue)](https://github.com/ironn0/Map_to_Geojson-Converter/releases/tag/v0.0.5)
 [![Status](https://img.shields.io/badge/status-prototype-orange)](https://github.com/)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
