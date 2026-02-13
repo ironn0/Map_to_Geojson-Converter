@@ -1,10 +1,19 @@
-# Map to GeoJSON Converter
-[![Version](https://img.shields.io/badge/version-0.0.7-blue)](https://github.com/ironn0/Map_to_Geojson-Converter/releases/tag/v0.0.5)
-[![Status](https://img.shields.io/badge/status-prototype-orange)](https://github.com/)
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+<p align="center">
+  <img src="docs/icon.svg" alt="Map to GeoJSON Converter" width="200"/>
+</p>
 
-A free, open-source tool to convert map images (PNG, JPG) and SVG files into GeoJSON format, using AI and computer vision. Born as an alternative to expensive databases like Geochron (500€), enabling accessible geospatial data creation.
+<h1 align="center">Map to GeoJSON Converter</h1>
+
+<p align="center">
+  <a href="https://github.com/ironn0/Map_to_Geojson-Converter/releases/tag/v0.0.5"><img src="https://img.shields.io/badge/version-0.0.7-blue" alt="Version"/></a>
+  <a href="https://github.com/"><img src="https://img.shields.io/badge/status-prototype-orange" alt="Status"/></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.8%2B-blue" alt="Python"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License"/></a>
+</p>
+
+<p align="center">
+  A free, open-source tool to convert map images (PNG, JPG) and SVG files into GeoJSON format, using AI and computer vision. Born as an alternative to expensive databases like Geochron (500€), enabling accessible geospatial data creation.
+</p>
 
 ---
 
@@ -41,7 +50,7 @@ Transform map images into GeoJSON automatically:
 
 | Input Map | Output (Detected Regions) |
 |-----------|---------------------------|
-| ![Input](https://ironn0.github.io/ironn0/assets/italy_input.png) | ![Output](https://ironn0.github.io/ironn0/assets/italy_output.png) |
+| ![Input](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/italy_input.png) | ![Output](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/italy_output.png) |
 
 The tool extracts colored regions, identifies boundaries, and generates GeoJSON files ready for use in GIS applications.
 
