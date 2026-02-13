@@ -11,6 +11,41 @@ Combined changelog for Map to GeoJSON Converter.
 
 ---
 
+## [0.0.9](https://github.com/ironn0/Map_to_Geojson-Converter/releases/tag/v0.0.9) (2026-02-13)
+
+### 🎉 Features
+
+* Complete webapp UI redesign with modern light theme and step-by-step workflow
+* New sidebar layout with 4-step progress indicator (Upload → Segment → Georef → Export)
+* Enhanced polygon editor toolbar with multiple tools: Select, Edit, Move, Scale
+* Shape manipulation actions: Simplify (Douglas-Peucker), Smooth (Laplacian), Duplicate, Delete
+* Right-click context menu for quick polygon actions
+* Keyboard shortcuts for tools (V=Select, E=Edit, M=Move, S=Scale, Del=Delete, Ctrl+D=Duplicate)
+* Added project icon (icon.svg) to webapp and README
+* Favicon support for browser tab
+
+### 🛠️ Fixes
+
+* Removed cluttered regions sidebar list - now click directly on shapes to select
+* Improved mouse interactions: single-click to select, double-click to edit vertices
+* Fixed cursor states for different tools (pointer, move, crosshair, resize)
+* Better visual feedback with toast notifications when changing tools
+
+### 🎨 UI/UX
+
+* New CSS variables system with light color palette
+* Inter font family from Google Fonts
+* Smooth animations and transitions
+* Responsive panel design with collapsible sidebar
+* Modern button styles with hover effects
+
+### 📄 Documentation
+
+* Updated README with centered icon and badges
+* Fixed image URLs for examples (italy_input.png, italy_output.png)
+
+---
+
 ## [0.0.8] (2025-12-06)
 
 ### 🎉 Features
