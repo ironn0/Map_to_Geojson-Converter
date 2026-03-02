@@ -7,6 +7,7 @@
 const state = {
     sessionId: null,
     regions: [],
+    points: [], // Array of {id, name, x, y}
     imageWidth: 0,
     imageHeight: 0,
     canvasScale: 1,
@@ -18,10 +19,15 @@ const state = {
     
     // Editor
     selectedRegionId: null,
+    selectedPointId: null,
     editingRegionId: null,
     selectedVertexIndex: null,
     originalPoints: null,
-    currentTool: 'select', // select, edit, move, scale, add-vertex, delete-vertex
+    currentTool: 'select', // select, edit, move, scale, draw-polygon, draw-point
+    
+    // Drawing
+    isDrawing: false,
+    drawingPoints: [],
     
     // Georef
     georefMap: null,
@@ -90,14 +96,32 @@ const el = {
     
     // Export stats
     statRegions: $('stat-regions'),
+    statPoints: $('stat-points'),
     statVertices: $('stat-vertices'),
     
     // Editor toolbar
     editorToolbar: $('editor-toolbar'),
+    selectionLabel: $('selection-label'),
+    vertexTools: $('vertex-tools'),
+    drawTools: $('draw-tools'),
     addVertexBtn: $('action-add-vertex'),
     deleteVertexBtn: $('action-delete-vertex'),
     savePolygonBtn: $('save-polygon-btn'),
     cancelEditBtn: $('cancel-edit-btn'),
+    
+    // Draw tools
+    toolDrawPolygon: $('tool-draw-polygon'),
+    toolDrawPoint: $('tool-draw-point'),
+    finishDrawBtn: $('finish-draw-btn'),
+    cancelDrawBtn: $('cancel-draw-btn'),
+    
+    // Rename
+    renameBtn: $('action-rename'),
+    renameModal: $('rename-modal'),
+    renameModalClose: $('rename-modal-close'),
+    renameInput: $('rename-input'),
+    renameCancel: $('rename-cancel'),
+    renameSave: $('rename-save'),
     
     // Tool buttons
     toolSelect: $('tool-select'),
@@ -254,18 +278,41 @@ function setupEventListeners() {
     // Tool buttons - with null checks and logging
     if (el.toolSelect) {
         el.toolSelect.addEventListener('click', () => { console.log('Tool select clicked'); setTool('select'); });
-    } else { console.warn('tool-select not found'); }
+    }
     
     if (el.toolEdit) {
-        el.toolEdit.addEventListener('click', () => { console.log('Tool edit clicked'); setTool('edit'); });
+        el.toolEdit.addEventListener('click', () => { 
+            console.log('Tool edit clicked'); 
+            if (state.selectedRegionId !== null) {
+                startEditRegion(state.selectedRegionId);
+            } else {
+                toast('Seleziona prima un\'area cliccandoci sopra', 'warning');
+            }
+        });
     } else { console.warn('tool-edit not found'); }
     
     if (el.toolMove) {
-        el.toolMove.addEventListener('click', () => { console.log('Tool move clicked'); setTool('move'); });
+        el.toolMove.addEventListener('click', () => { 
+            console.log('Tool move clicked'); 
+            if (state.selectedRegionId !== null) {
+                setTool('move'); 
+                toast('Trascina l\'area per spostarla', 'info');
+            } else {
+                toast('Seleziona prima un\'area', 'warning');
+            }
+        });
     } else { console.warn('tool-move not found'); }
     
     if (el.toolScale) {
-        el.toolScale.addEventListener('click', () => { console.log('Tool scale clicked'); setTool('scale'); });
+        el.toolScale.addEventListener('click', () => { 
+            console.log('Tool scale clicked'); 
+            if (state.selectedRegionId !== null) {
+                setTool('scale'); 
+                toast('Trascina su/giù sull\'area per ridimensionarla', 'info');
+            } else {
+                toast('Seleziona prima un\'area', 'warning');
+            }
+        });
     } else { console.warn('tool-scale not found'); }
     
     if (el.simplifyBtn) {
@@ -290,10 +337,26 @@ function setupEventListeners() {
     
     // Context menu items
     document.getElementById('ctx-edit')?.addEventListener('click', () => { hideContextMenu(); if (state.selectedRegionId !== null) startEditRegion(state.selectedRegionId); });
+    document.getElementById('ctx-move')?.addEventListener('click', () => { hideContextMenu(); setTool('move'); });
     document.getElementById('ctx-duplicate')?.addEventListener('click', () => { hideContextMenu(); duplicateShape(); });
     document.getElementById('ctx-simplify')?.addEventListener('click', () => { hideContextMenu(); simplifyShape(); });
     document.getElementById('ctx-smooth')?.addEventListener('click', () => { hideContextMenu(); smoothShape(); });
     document.getElementById('ctx-delete')?.addEventListener('click', () => { hideContextMenu(); deleteSelectedShape(); });
+    document.getElementById('ctx-rename')?.addEventListener('click', () => { hideContextMenu(); openRenameModal(); });
+    
+    // Draw tools
+    el.toolDrawPolygon?.addEventListener('click', () => startDrawPolygon());
+    el.toolDrawPoint?.addEventListener('click', () => startDrawPoint());
+    el.finishDrawBtn?.addEventListener('click', () => finishDrawing());
+    el.cancelDrawBtn?.addEventListener('click', () => cancelDrawing());
+    
+    // Rename
+    el.renameBtn?.addEventListener('click', () => openRenameModal());
+    el.renameModalClose?.addEventListener('click', () => closeRenameModal());
+    el.renameCancel?.addEventListener('click', () => closeRenameModal());
+    el.renameSave?.addEventListener('click', () => saveRename());
+    el.renameInput?.addEventListener('keydown', e => { if (e.key === 'Enter') saveRename(); });
+    el.renameModal?.addEventListener('click', e => { if (e.target === el.renameModal) closeRenameModal(); });
     
     // Preview modal
     el.modalClose.addEventListener('click', () => el.previewModal.classList.remove('visible'));
@@ -357,6 +420,7 @@ function updateStep(stepNum) {
 
 function updateExportStats() {
     el.statRegions.textContent = state.regions.length;
+    if (el.statPoints) el.statPoints.textContent = state.points.length;
     const totalVertices = state.regions.reduce((sum, r) => sum + r.points.length, 0);
     el.statVertices.textContent = totalVertices;
 }
@@ -424,15 +488,10 @@ function displayImage(base64) {
         
         el.zoomLevel.textContent = Math.round(state.canvasScale * 100) + '%';
         
-        // Position polygon editor
-        const rect = el.canvas.getBoundingClientRect();
-        el.polygonEditor.style.position = 'absolute';
-        el.polygonEditor.style.left = rect.left - wrapperRect.left + 'px';
-        el.polygonEditor.style.top = rect.top - wrapperRect.top + 'px';
-        el.polygonEditor.setAttribute('width', el.canvas.width);
-        el.polygonEditor.setAttribute('height', el.canvas.height);
-        
-        if (state.regions.length > 0) renderPolygons();
+        // Position polygon editor after layout is complete
+        requestAnimationFrame(() => {
+            if (state.regions.length > 0) renderPolygons();
+        });
     };
     img.src = base64.startsWith('data:') ? base64 : 'data:image/png;base64,' + base64;
 }
@@ -502,6 +561,12 @@ function toggleClickMode() {
 }
 
 async function handleCanvasClick(e) {
+    // Handle drawing mode (polygon or point)
+    if (state.isDrawing || state.currentTool === 'draw-point') {
+        handleDrawClick(e);
+        return;
+    }
+    
     if (!state.sessionId || state.editingRegionId !== null || !state.clickMode) return;
     
     const rect = el.canvas.getBoundingClientRect();
@@ -553,11 +618,26 @@ function renderPolygons() {
         el.editorToolbar.classList.remove('visible');
     }
     
-    // Update position
+    // Update selection label
+    updateSelectionLabel();
+    
+    // Update position and size to match canvas exactly
     const wrapperRect = el.canvasWrapper.getBoundingClientRect();
     const rect = el.canvas.getBoundingClientRect();
-    el.polygonEditor.style.left = rect.left - wrapperRect.left + 'px';
-    el.polygonEditor.style.top = rect.top - wrapperRect.top + 'px';
+    el.polygonEditor.style.left = (rect.left - wrapperRect.left) + 'px';
+    el.polygonEditor.style.top = (rect.top - wrapperRect.top) + 'px';
+    el.polygonEditor.style.width = rect.width + 'px';
+    el.polygonEditor.style.height = rect.height + 'px';
+    el.polygonEditor.setAttribute('width', rect.width);
+    el.polygonEditor.setAttribute('height', rect.height);
+    el.polygonEditor.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
+    
+    console.log('Polygon editor positioned:', {
+        left: el.polygonEditor.style.left,
+        top: el.polygonEditor.style.top,
+        width: rect.width,
+        height: rect.height
+    });
     
     state.regions.forEach((region, idx) => {
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -571,12 +651,14 @@ function renderPolygons() {
         // Click handlers based on current tool
         polygon.onclick = e => { 
             e.stopPropagation(); 
+            console.log('Polygon clicked:', idx, region.name);
             if (state.editingRegionId === null) {
                 selectRegion(idx); 
             }
         };
         polygon.ondblclick = e => { 
             e.stopPropagation(); 
+            console.log('Polygon double-clicked:', idx);
             startEditRegion(idx); 
         };
         polygon.onmousedown = e => {
@@ -611,6 +693,67 @@ function renderPolygons() {
         
         el.polygonEditor.appendChild(g);
     });
+    
+    // Render points
+    state.points.forEach((point, idx) => {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.classList.add('map-point');
+        circle.setAttribute('cx', point.x * state.canvasScale);
+        circle.setAttribute('cy', point.y * state.canvasScale);
+        circle.setAttribute('r', 8);
+        if (idx === state.selectedPointId) circle.classList.add('selected');
+        
+        circle.onclick = e => {
+            e.stopPropagation();
+            state.selectedPointId = idx;
+            state.selectedRegionId = null;
+            updateSelectionLabel();
+            renderPolygons();
+        };
+        
+        // Label
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.classList.add('point-label');
+        text.setAttribute('x', point.x * state.canvasScale + 12);
+        text.setAttribute('y', point.y * state.canvasScale + 4);
+        text.textContent = point.name;
+        
+        g.appendChild(circle);
+        g.appendChild(text);
+        el.polygonEditor.appendChild(g);
+    });
+    
+    // Render drawing preview
+    if (state.isDrawing && state.drawingPoints.length > 0) {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.classList.add('drawing-preview');
+        
+        // Draw lines between points
+        if (state.drawingPoints.length > 1) {
+            const pathData = state.drawingPoints.map((p, i) => 
+                `${i === 0 ? 'M' : 'L'} ${p[0] * state.canvasScale} ${p[1] * state.canvasScale}`
+            ).join(' ');
+            
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.classList.add('drawing-line');
+            path.setAttribute('d', pathData);
+            g.appendChild(path);
+        }
+        
+        // Draw vertices
+        state.drawingPoints.forEach((p, i) => {
+            const v = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            v.classList.add('drawing-vertex');
+            v.setAttribute('cx', p[0] * state.canvasScale);
+            v.setAttribute('cy', p[1] * state.canvasScale);
+            v.setAttribute('r', 6);
+            g.appendChild(v);
+        });
+        
+        el.polygonEditor.appendChild(g);
+    }
 }
 
 function renderVertices(g, region, regionIdx) {
@@ -672,11 +815,29 @@ function selectRegion(idx) {
     state.selectedRegionId = idx;
     state.selectedVertexIndex = null;
     renderPolygons();
+    updateSelectionLabel();
     
     // Show info about selected region
     if (!wasSelected && state.regions[idx]) {
         const r = state.regions[idx];
         toast(`${r.name} selezionata • ${r.points.length} vertici`, 'info');
+    }
+}
+
+function updateSelectionLabel() {
+    if (!el.selectionLabel) return;
+    
+    if (state.selectedPointId !== null && state.points[state.selectedPointId]) {
+        const p = state.points[state.selectedPointId];
+        el.selectionLabel.textContent = `Punto: ${p.name}`;
+        el.selectionLabel.classList.add('has-selection');
+    } else if (state.selectedRegionId !== null && state.regions[state.selectedRegionId]) {
+        const r = state.regions[state.selectedRegionId];
+        el.selectionLabel.textContent = `${r.name} (${r.points.length} pt)`;
+        el.selectionLabel.classList.add('has-selection');
+    } else {
+        el.selectionLabel.textContent = 'Clicca su un\'area';
+        el.selectionLabel.classList.remove('has-selection');
     }
 }
 
@@ -689,6 +850,7 @@ function startEditRegion(idx) {
     state.originalPoints = JSON.parse(JSON.stringify(state.regions[idx].points));
     
     el.polygonEditor.classList.add('active');
+    if (el.vertexTools) el.vertexTools.classList.remove('hidden');
     setTool('edit');
     
     if (state.clickMode) { 
@@ -697,8 +859,8 @@ function startEditRegion(idx) {
     }
     
     renderPolygons();
-    updateRegionsList();
-    toast('Trascina i vertici per modificare la forma', 'info');
+    updateSelectionLabel();
+    toast('Modifica vertici: trascina per spostare, clicca sui punti medi per aggiungere', 'info');
 }
 
 function exitEditMode() {
@@ -706,6 +868,7 @@ function exitEditMode() {
     state.selectedVertexIndex = null;
     state.originalPoints = null;
     el.polygonEditor.classList.remove('active');
+    if (el.vertexTools) el.vertexTools.classList.add('hidden');
     setTool('select');
 }
 
@@ -1252,6 +1415,9 @@ function applyGeoref() {
     
     closeGeorefModal();
     toast('Coordinate geografiche applicate!', 'success');
+    
+    // Passa automaticamente allo step Export
+    updateStep(4);
 }
 
 // ==================== Territory Alignment ====================
@@ -1333,6 +1499,9 @@ async function alignTerritories() {
             }
             
             toast(data.message || 'Allineamento completato!', 'success');
+            
+            // Passa automaticamente allo step Export
+            updateStep(4);
         } else {
             toast('Allineamento non riuscito', 'warning');
         }
@@ -1346,12 +1515,82 @@ async function alignTerritories() {
 
 // ==================== Export ====================
 async function generateGeoJSON() {
-    if (!state.sessionId || state.regions.length === 0) return null;
+    if (!state.sessionId) {
+        toast('Carica prima un\'immagine', 'warning');
+        return null;
+    }
+    if (state.regions.length === 0 && state.points.length === 0) {
+        toast('Nessuna regione o punto da esportare. Esegui prima la segmentazione o disegna elementi!', 'warning');
+        return null;
+    }
     try {
-        state.geojsonData = await api('/export', { 
-            method: 'POST', 
-            body: JSON.stringify({ session_id: state.sessionId, bounds: getBounds() }) 
+        let geojson = {
+            type: 'FeatureCollection',
+            properties: {
+                source: 'Map to GeoJSON Converter',
+                bounds: getBounds()
+            },
+            features: []
+        };
+        
+        const bounds = getBounds();
+        const backendRegions = state.regions.filter(r => !r.clientSide);
+        const clientRegions = state.regions.filter(r => r.clientSide);
+        
+        // Get backend regions if any
+        if (backendRegions.length > 0) {
+            const backendGeojson = await api('/export', { 
+                method: 'POST', 
+                body: JSON.stringify({ session_id: state.sessionId, bounds: bounds }) 
+            });
+            geojson.features = backendGeojson.features || [];
+        }
+        
+        // Add client-side drawn regions
+        clientRegions.forEach((region, idx) => {
+            const coords = region.points.map(p => {
+                const lng = bounds.west + (p[0] / state.imageWidth) * (bounds.east - bounds.west);
+                const lat = bounds.north - (p[1] / state.imageHeight) * (bounds.north - bounds.south);
+                return [lng, lat];
+            });
+            // Close the polygon
+            if (coords.length > 0) {
+                coords.push([...coords[0]]);
+            }
+            
+            geojson.features.push({
+                type: 'Feature',
+                properties: {
+                    name: region.name,
+                    type: 'drawn-polygon',
+                    color: region.color
+                },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [coords]
+                }
+            });
         });
+        
+        // Add client-side points
+        state.points.forEach(point => {
+            const lng = bounds.west + (point.x / state.imageWidth) * (bounds.east - bounds.west);
+            const lat = bounds.north - (point.y / state.imageHeight) * (bounds.north - bounds.south);
+            
+            geojson.features.push({
+                type: 'Feature',
+                properties: {
+                    name: point.name,
+                    type: 'point'
+                },
+                geometry: {
+                    type: 'Point',
+                    coordinates: [lng, lat]
+                }
+            });
+        });
+        
+        state.geojsonData = geojson;
         return state.geojsonData;
     } catch (e) {
         toast('Errore nella generazione: ' + e.message, 'error');
@@ -1427,6 +1666,181 @@ function toast(message, type = 'info') {
         t.style.animation = 'toastIn 0.3s ease reverse'; 
         setTimeout(() => t.remove(), 300); 
     }, 4000);
+}
+
+// ==================== Drawing Functions ====================
+function startDrawPolygon() {
+    if (!state.sessionId) {
+        toast('Carica prima un\'immagine', 'warning');
+        return;
+    }
+    
+    state.isDrawing = true;
+    state.drawingPoints = [];
+    state.currentTool = 'draw-polygon';
+    state.selectedRegionId = null;
+    state.selectedPointId = null;
+    
+    // Show draw controls
+    if (el.drawTools) el.drawTools.classList.remove('hidden');
+    if (el.vertexTools) el.vertexTools.classList.add('hidden');
+    
+    // Highlight draw button
+    el.toolDrawPolygon?.classList.add('active');
+    el.toolDrawPoint?.classList.remove('active');
+    
+    toast('Clicca sulla mappa per disegnare un poligono. Premi "Completa" quando hai finito.', 'info');
+    renderPolygons();
+}
+
+function startDrawPoint() {
+    if (!state.sessionId) {
+        toast('Carica prima un\'immagine', 'warning');
+        return;
+    }
+    
+    state.currentTool = 'draw-point';
+    state.selectedRegionId = null;
+    state.selectedPointId = null;
+    
+    el.toolDrawPoint?.classList.add('active');
+    el.toolDrawPolygon?.classList.remove('active');
+    
+    toast('Clicca sulla mappa per aggiungere un punto', 'info');
+}
+
+function handleDrawClick(e) {
+    const rect = el.canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / state.canvasScale;
+    const y = (e.clientY - rect.top) / state.canvasScale;
+    
+    if (state.currentTool === 'draw-polygon' && state.isDrawing) {
+        state.drawingPoints.push([x, y]);
+        renderPolygons();
+        toast(`Punto ${state.drawingPoints.length} aggiunto`, 'success');
+    } else if (state.currentTool === 'draw-point') {
+        addPoint(x, y);
+    }
+}
+
+function addPoint(x, y) {
+    const pointId = state.points.length;
+    const newPoint = {
+        id: pointId,
+        name: `Punto ${pointId + 1}`,
+        x: x,
+        y: y
+    };
+    state.points.push(newPoint);
+    state.selectedPointId = pointId;
+    state.currentTool = 'select';
+    
+    el.toolDrawPoint?.classList.remove('active');
+    
+    renderPolygons();
+    updateSelectionLabel();
+    
+    // Open rename modal for the new point
+    setTimeout(() => openRenameModal(), 100);
+    toast('Punto aggiunto! Assegna un nome.', 'success');
+}
+
+function finishDrawing() {
+    if (!state.isDrawing || state.drawingPoints.length < 3) {
+        toast('Servono almeno 3 punti per creare un poligono', 'warning');
+        return;
+    }
+    
+    // Create new region (client-side)
+    const newRegion = {
+        name: `Territorio ${state.regions.length + 1}`,
+        points: state.drawingPoints.map(p => [...p]),
+        color: getRandomColor(),
+        clientSide: true  // Flag to distinguish from backend regions
+    };
+    
+    state.regions.push(newRegion);
+    state.selectedRegionId = state.regions.length - 1;
+    
+    // Reset drawing state
+    state.isDrawing = false;
+    state.drawingPoints = [];
+    state.currentTool = 'select';
+    
+    // Hide draw controls
+    if (el.drawTools) el.drawTools.classList.add('hidden');
+    el.toolDrawPolygon?.classList.remove('active');
+    
+    renderPolygons();
+    updateSelectionLabel();
+    
+    // Open rename modal for the new region
+    setTimeout(() => openRenameModal(), 100);
+    toast('Territorio creato! Assegna un nome.', 'success');
+}
+
+function cancelDrawing() {
+    state.isDrawing = false;
+    state.drawingPoints = [];
+    state.currentTool = 'select';
+    
+    if (el.drawTools) el.drawTools.classList.add('hidden');
+    el.toolDrawPolygon?.classList.remove('active');
+    el.toolDrawPoint?.classList.remove('active');
+    
+    renderPolygons();
+    toast('Disegno annullato', 'info');
+}
+
+function getRandomColor() {
+    const colors = [
+        '#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', 
+        '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+// ==================== Rename Functions ====================
+function openRenameModal() {
+    if (state.selectedRegionId === null && state.selectedPointId === null) {
+        toast('Seleziona prima un elemento', 'warning');
+        return;
+    }
+    
+    let currentName = '';
+    if (state.selectedRegionId !== null && state.regions[state.selectedRegionId]) {
+        currentName = state.regions[state.selectedRegionId].name;
+    } else if (state.selectedPointId !== null && state.points[state.selectedPointId]) {
+        currentName = state.points[state.selectedPointId].name;
+    }
+    
+    el.renameInput.value = currentName;
+    el.renameModal.classList.add('visible');
+    setTimeout(() => el.renameInput.focus(), 100);
+}
+
+function closeRenameModal() {
+    el.renameModal.classList.remove('visible');
+}
+
+function saveRename() {
+    const newName = el.renameInput.value.trim();
+    if (!newName) {
+        toast('Inserisci un nome valido', 'warning');
+        return;
+    }
+    
+    if (state.selectedRegionId !== null && state.regions[state.selectedRegionId]) {
+        state.regions[state.selectedRegionId].name = newName;
+        toast(`Territorio rinominato: ${newName}`, 'success');
+    } else if (state.selectedPointId !== null && state.points[state.selectedPointId]) {
+        state.points[state.selectedPointId].name = newName;
+        toast(`Punto rinominato: ${newName}`, 'success');
+    }
+    
+    closeRenameModal();
+    updateSelectionLabel();
+    renderPolygons();
 }
 
 // ==================== Global Functions ====================

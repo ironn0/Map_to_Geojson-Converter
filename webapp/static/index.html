@@ -6,7 +6,7 @@
     <title>Map to GeoJSON</title>
     <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="/static/styles.css?v=20260213f">
+    <link rel="stylesheet" href="/static/styles.css?v=20260302i">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -199,6 +199,10 @@
                             <span class="stat-label">Regioni</span>
                         </div>
                         <div class="stat">
+                            <span class="stat-value" id="stat-points">0</span>
+                            <span class="stat-label">Punti</span>
+                        </div>
+                        <div class="stat">
                             <span class="stat-value" id="stat-vertices">0</span>
                             <span class="stat-label">Vertici</span>
                         </div>
@@ -281,69 +285,56 @@
         </div>
     </div>
 
-    <!-- Editor Toolbar - Enhanced -->
+    <!-- Editor Toolbar - Clean -->
     <div id="editor-toolbar">
-        <div class="toolbar-section">
-            <span class="editor-title">Modifica</span>
-        </div>
-        
-        <div class="toolbar-section tools">
-            <button id="tool-select" class="tool-btn active" title="Seleziona (V)">
+        <!-- Draw tools -->
+        <div class="toolbar-section draw-tools">
+            <button id="tool-draw-polygon" class="tool-btn" title="Disegna poligono">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+                    <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/>
                 </svg>
             </button>
-            <button id="tool-edit" class="tool-btn" title="Modifica vertici (E)">
+            <button id="tool-draw-point" class="tool-btn" title="Aggiungi punto">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                </svg>
-            </button>
-            <button id="tool-move" class="tool-btn" title="Sposta (M)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>
-                </svg>
-            </button>
-            <button id="tool-scale" class="tool-btn" title="Scala (S)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 21l-6-6m6 6v-4.8m0 4.8h-4.8M3 16.2V21m0 0h4.8M3 21l6-6M21 7.8V3m0 0h-4.8M21 3l-6 6M3 7.8V3m0 0h4.8M3 3l6 6"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                    <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
                 </svg>
             </button>
         </div>
 
         <div class="toolbar-divider"></div>
+
+        <!-- Selection info -->
+        <div class="toolbar-section selection-info">
+            <span id="selection-label">Nessuna selezione</span>
+        </div>
+
+        <div class="toolbar-divider"></div>
         
-        <div class="toolbar-section actions">
-            <button id="action-add-vertex" class="tool-btn" title="Aggiungi vertice (+)">
+        <!-- Shape actions - work on selected shape -->
+        <div class="toolbar-section shape-actions">
+            <button id="action-rename" class="tool-btn" title="Rinomina">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
             </button>
-            <button id="action-delete-vertex" class="tool-btn" title="Elimina vertice (Del)">
+            <button id="action-simplify" class="tool-btn" title="Semplifica">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/>
+                    <polygon points="3,21 12,3 21,21"/>
                 </svg>
             </button>
-            <button id="action-simplify" class="tool-btn" title="Semplifica forma">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 4l16 16M4 20L20 4"/>
-                </svg>
-            </button>
-            <button id="action-smooth" class="tool-btn" title="Arrotonda angoli">
+            <button id="action-smooth" class="tool-btn" title="Arrotonda">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 2a10 10 0 1 0 10 10"/>
                 </svg>
             </button>
-        </div>
-
-        <div class="toolbar-divider"></div>
-
-        <div class="toolbar-section danger">
-            <button id="action-duplicate" class="tool-btn" title="Duplica (Ctrl+D)">
+            <button id="action-duplicate" class="tool-btn" title="Duplica">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>
             </button>
-            <button id="action-delete" class="tool-btn danger" title="Elimina (Backspace)">
+            <button id="action-delete" class="tool-btn danger" title="Elimina">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
@@ -352,23 +343,89 @@
 
         <div class="toolbar-divider"></div>
 
-        <div class="toolbar-section confirm">
-            <button id="cancel-edit-btn" class="btn-ghost">Annulla</button>
+        <!-- Advanced tools -->
+        <div class="toolbar-section advanced">
+            <button id="tool-edit" class="tool-btn" title="Modifica vertici">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+            </button>
+            <button id="tool-move" class="tool-btn" title="Sposta">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>
+                </svg>
+            </button>
+            <button id="tool-scale" class="tool-btn" title="Scala">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 21l-6-6m6 6v-4.8m0 4.8h-4.8M3 16.2V21m0 0h4.8M3 21l6-6M21 7.8V3m0 0h-4.8M21 3l-6 6M3 7.8V3m0 0h4.8M3 3l6 6"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Vertex/Draw editing - shown in edit mode -->
+        <div id="vertex-tools" class="toolbar-section vertex-tools hidden">
+            <div class="toolbar-divider"></div>
+            <button id="action-add-vertex" class="tool-btn" title="Aggiungi vertice">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
+                </svg>
+            </button>
+            <button id="action-delete-vertex" class="tool-btn" title="Elimina vertice">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/>
+                </svg>
+            </button>
+            <button id="cancel-edit-btn" class="btn-ghost">Esci</button>
             <button id="save-polygon-btn" class="btn-primary-sm">Salva</button>
+        </div>
+
+        <!-- Draw mode controls -->
+        <div id="draw-tools" class="toolbar-section draw-controls hidden">
+            <div class="toolbar-divider"></div>
+            <span class="draw-hint">Clicca per aggiungere punti</span>
+            <button id="finish-draw-btn" class="btn-primary-sm">Completa</button>
+            <button id="cancel-draw-btn" class="btn-ghost">Annulla</button>
+        </div>
+    </div>
+    
+    <!-- Hidden elements for compatibility -->
+    <button id="tool-select" style="display:none"></button>
+
+    <!-- Rename Modal -->
+    <div id="rename-modal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Rinomina</h3>
+                <button id="rename-modal-close" class="icon-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rename-input">Nome</label>
+                    <input type="text" id="rename-input" class="text-input" placeholder="Inserisci nome...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="rename-cancel" class="btn-outline">Annulla</button>
+                <button id="rename-save" class="btn-primary">Salva</button>
+            </div>
         </div>
     </div>
 
     <!-- Context Menu -->
     <div id="context-menu" class="context-menu">
-        <button data-action="edit"><span>✏️</span> Modifica vertici</button>
-        <button data-action="move"><span>↔️</span> Sposta</button>
-        <button data-action="duplicate"><span>📋</span> Duplica</button>
+        <button id="ctx-rename" data-action="rename"><span>✏️</span> Rinomina</button>
+        <button id="ctx-edit" data-action="edit"><span>📐</span> Modifica vertici</button>
+        <button id="ctx-move" data-action="move"><span>↔️</span> Sposta</button>
+        <button id="ctx-duplicate" data-action="duplicate"><span>📋</span> Duplica</button>
         <div class="menu-divider"></div>
-        <button data-action="simplify"><span>📐</span> Semplifica</button>
-        <button data-action="smooth"><span>🔄</span> Arrotonda</button>
+        <button id="ctx-simplify" data-action="simplify"><span>🔧</span> Semplifica</button>
+        <button id="ctx-smooth" data-action="smooth"><span>🔄</span> Arrotonda</button>
         <div class="menu-divider"></div>
-        <button data-action="delete" class="danger"><span>🗑️</span> Elimina</button>
+        <button id="ctx-delete" data-action="delete" class="danger"><span>🗑️</span> Elimina</button>
     </div>
+
 
     <!-- Preview Modal -->
     <div id="preview-modal" class="modal">
@@ -432,6 +489,6 @@
     <div id="toast-container"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/app.js?v=20260213f"></script>
+    <script src="/static/app.js?v=20260302i"></script>
 </body>
 </html>

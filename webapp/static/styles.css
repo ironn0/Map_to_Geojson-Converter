@@ -834,10 +834,63 @@ body {
     position: absolute;
     pointer-events: none;
     z-index: 10;
+    /* Debug border - remove after testing */
+    /* outline: 2px dashed red; */
+}
+
+/* Allow clicks on polygons but let clicks pass through empty areas to canvas */
+#polygon-editor .polygon-path,
+#polygon-editor .vertex,
+#polygon-editor .midpoint {
+    pointer-events: auto;
 }
 
 #polygon-editor.active {
+    /* Edit mode active */
+}
+
+/* Map Points */
+.map-point {
+    fill: var(--primary);
+    stroke: white;
+    stroke-width: 2;
+    cursor: pointer;
     pointer-events: auto;
+}
+
+.map-point:hover {
+    fill: var(--primary-hover);
+    transform-origin: center;
+}
+
+.map-point.selected {
+    stroke: var(--warning);
+    stroke-width: 3;
+}
+
+.point-label {
+    fill: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+/* Drawing Preview */
+.drawing-preview {
+    pointer-events: none;
+}
+
+.drawing-line {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 2;
+    stroke-dasharray: 5, 5;
+}
+
+.drawing-vertex {
+    fill: var(--primary);
+    stroke: white;
+    stroke-width: 2;
 }
 
 /* Empty State */
@@ -972,8 +1025,8 @@ body {
     transform: translateX(-50%) translateY(100px);
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 12px 20px;
+    gap: 8px;
+    padding: 8px 16px;
     background: var(--bg-secondary);
     border-radius: var(--radius);
     box-shadow: var(--shadow-lg);
@@ -990,22 +1043,78 @@ body {
     pointer-events: auto;
 }
 
-.editor-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
+/* Selection info */
+.selection-info {
+    padding-right: 8px;
 }
 
-.editor-actions {
+#selection-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+#selection-label.has-selection {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Toolbar sections */
+.toolbar-section {
     display: flex;
+    align-items: center;
     gap: 4px;
 }
 
-.editor-confirm {
+.toolbar-section.vertex-tools.hidden {
+    display: none;
+}
+
+/* Tool buttons - simple icon only */
+#editor-toolbar .tool-btn {
     display: flex;
-    gap: 8px;
-    padding-left: 16px;
-    border-left: 1px solid var(--border);
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: var(--bg-tertiary);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+#editor-toolbar .tool-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+#editor-toolbar .tool-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+#editor-toolbar .tool-btn.danger:hover {
+    background: var(--error);
+    color: white;
+    border-color: var(--error);
+}
+
+#editor-toolbar .tool-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+    margin: 0 4px;
 }
 
 /* ==================== Polygon SVG ==================== */
