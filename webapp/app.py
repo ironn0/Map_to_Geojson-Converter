@@ -602,6 +602,15 @@ async def serve_frontend():
     return HTMLResponse(content="<h1>Frontend not found. Create static/index.html</h1>")
 
 
+@app.get("/privacy", response_class=HTMLResponse)
+async def serve_privacy():
+    """Serve la pagina Privacy & Cookie Policy"""
+    html_path = Path(__file__).parent / "static" / "privacy.html"
+    if html_path.exists():
+        return HTMLResponse(content=html_path.read_text(encoding='utf-8'))
+    return HTMLResponse(content="<h1>Privacy page not found</h1>")
+
+
 @app.post("/api/upload")
 async def upload_image(file: UploadFile = File(...)):
     """Carica un'immagine per l'elaborazione"""

@@ -6,7 +6,7 @@
     <title>Map to GeoJSON</title>
     <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="/static/styles.css?v=20260302i">
+    <link rel="stylesheet" href="/static/styles.css?v=20260302j">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -488,7 +488,26 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
+    <!-- Cookie Banner -->
+    <div id="cookie-banner" class="cookie-banner" style="display: none;">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM16 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM9 16a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM15 15a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM12 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                </svg>
+                <p>Utilizziamo cookie essenziali per il funzionamento dell'app e cookie analitici per migliorare l'esperienza. 
+                    <a href="/privacy" target="_blank">Privacy Policy</a>
+                </p>
+            </div>
+            <div class="cookie-buttons">
+                <button id="cookie-essential" class="btn-outline btn-sm">Solo Essenziali</button>
+                <button id="cookie-accept" class="btn-primary btn-sm">Accetta Tutti</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="/static/app.js?v=20260302i"></script>
+    <script src="/static/app.js?v=20260302j"></script>
 </body>
 </html>

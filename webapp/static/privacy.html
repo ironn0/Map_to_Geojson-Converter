@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy & Cookie Policy - Map2Geo</title>
+    <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --bg: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: #eef2ff;
+            --success: #10b981;
+            --danger: #ef4444;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header img {
+            border-radius: 8px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 24px;
+            transition: color 0.15s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary-hover);
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text);
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        ul {
+            color: var(--text-secondary);
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        li strong {
+            color: var(--text);
+        }
+
+        .cookie-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .cookie-table th,
+        .cookie-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cookie-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cookie-table td {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .cookie-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-yes {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-no {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin: 16px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--text);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .cookie-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Torna all'app
+        </a>
+
+        <div class="header">
+            <img src="/static/icon.svg" alt="Map2Geo" width="48" height="48">
+            <h1>Privacy & Cookie Policy</h1>
+        </div>
+
+        <p>Ultimo aggiornamento: Marzo 2026</p>
+
+        <h2>1. Introduzione</h2>
+        <p>
+            Map2Geo rispetta la tua privacy. Questa policy spiega quali dati raccogliamo, 
+            come li utilizziamo e quali sono i tuoi diritti secondo il GDPR (Regolamento Generale 
+            sulla Protezione dei Dati) e la Direttiva ePrivacy.
+        </p>
+
+        <h2>2. Cookie Utilizzati</h2>
+        <p>I cookie sono piccoli file di testo salvati nel tuo browser. Ecco i cookie che utilizziamo:</p>
+
+        <table class="cookie-table">
+            <thead>
+                <tr>
+                    <th>Cookie</th>
+                    <th>Scopo</th>
+                    <th>Durata</th>
+                    <th>Essenziale?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>cookieConsent</strong></td>
+                    <td>Memorizza le tue preferenze sui cookie</td>
+                    <td>1 anno</td>
+                    <td><span class="badge badge-yes">Sì</span></td>
+                </tr>
+                <tr>
+                    <td><strong>sessionId</strong></td>
+                    <td>Identifica la tua sessione di lavoro con le immagini caricate</td>
+                    <td>Sessione</td>
+                    <td><span class="badge badge-yes">Sì</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Google Analytics</strong></td>
+                    <td>Statistiche anonime sull'utilizzo dell'app</td>
+                    <td>2 anni</td>
+                    <td><span class="badge badge-no">No (richiede consenso)</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>3. Dati che Raccogliamo</h2>
+
+        <h3>3.1 Dati Tecnici (Essenziali)</h3>
+        <ul>
+            <li><strong>Immagini caricate:</strong> Temporaneamente elaborate sul server per la segmentazione. Non vengono salvate permanentemente.</li>
+            <li><strong>ID Sessione:</strong> Per collegare le tue richieste durante l'utilizzo dell'app.</li>
+            <li><strong>Preferenze cookie:</strong> Per ricordare le tue scelte.</li>
+        </ul>
+
+        <h3>3.2 Dati Analitici (Solo con consenso)</h3>
+        <ul>
+            <li><strong>Pagine visitate:</strong> Per capire quali funzionalità sono più utilizzate.</li>
+            <li><strong>Dispositivo e browser:</strong> Per ottimizzare l'esperienza su diverse piattaforme.</li>
+            <li><strong>Paese di origine:</strong> Statistiche geografiche aggregate.</li>
+        </ul>
+
+        <div class="card">
+            <h3>Nota Importante</h3>
+            <p style="margin-bottom: 0;">
+                Le immagini che carichi vengono elaborate localmente sul server e <strong>eliminate automaticamente</strong> 
+                al termine della sessione. Non conserviamo copie delle tue mappe o dei GeoJSON generati.
+            </p>
+        </div>
+
+        <h2>4. Base Giuridica</h2>
+        <ul>
+            <li><strong>Cookie essenziali:</strong> Legittimo interesse - necessari per il funzionamento dell'app.</li>
+            <li><strong>Cookie analitici:</strong> Consenso esplicito - attivati solo se accetti.</li>
+        </ul>
+
+        <h2>5. I Tuoi Diritti</h2>
+        <p>Secondo il GDPR, hai diritto a:</p>
+        <ul>
+            <li><strong>Accesso:</strong> Sapere quali dati abbiamo su di te.</li>
+            <li><strong>Rettifica:</strong> Correggere dati inesatti.</li>
+            <li><strong>Cancellazione:</strong> Richiedere l'eliminazione dei tuoi dati.</li>
+            <li><strong>Portabilità:</strong> Ricevere i tuoi dati in formato leggibile.</li>
+            <li><strong>Opposizione:</strong> Opporti al trattamento per finalità di marketing.</li>
+            <li><strong>Revoca del consenso:</strong> Ritirare il consenso in qualsiasi momento.</li>
+        </ul>
+
+        <h2>6. Gestione delle Preferenze</h2>
+        <p>Puoi gestire le tue preferenze sui cookie in diversi modi:</p>
+
+        <div class="card">
+            <h3>Reimposta Preferenze Cookie</h3>
+            <p>Clicca il pulsante per reimpostare le tue preferenze e visualizzare nuovamente il banner dei cookie.</p>
+            <div class="actions">
+                <button onclick="resetCookieConsent()" class="btn btn-danger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    Reimposta Preferenze
+                </button>
+            </div>
+        </div>
+
+        <h3>Impostazioni del Browser</h3>
+        <ul>
+            <li><strong>Chrome:</strong> Impostazioni → Privacy e sicurezza → Cookie</li>
+            <li><strong>Firefox:</strong> Opzioni → Privacy e sicurezza → Cookie</li>
+            <li><strong>Safari:</strong> Preferenze → Privacy → Cookie</li>
+            <li><strong>Edge:</strong> Impostazioni → Cookie e autorizzazioni sito</li>
+        </ul>
+
+        <h2>7. Servizi di Terze Parti</h2>
+        <ul>
+            <li><strong>Leaflet:</strong> Libreria per mappe interattive (nessun tracciamento).</li>
+            <li><strong>Google Fonts:</strong> Font tipografici (caricati da CDN Google).</li>
+            <li><strong>Google Analytics:</strong> Statistiche (solo con consenso).</li>
+        </ul>
+
+        <h2>8. Sicurezza</h2>
+        <p>
+            Adottiamo misure tecniche e organizzative per proteggere i tuoi dati, inclusa 
+            la crittografia HTTPS per tutte le comunicazioni e l'eliminazione automatica 
+            dei file temporanei.
+        </p>
+
+        <h2>9. Contatti</h2>
+        <p>
+            Per domande sulla privacy o per esercitare i tuoi diritti, contattaci all'indirizzo 
+            email indicato nella pagina principale dell'applicazione.
+        </p>
+
+        <div class="footer">
+            <p>
+                Map2Geo &copy; 2026 - 
+                <a href="/">Torna all'app</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function resetCookieConsent() {
+            localStorage.removeItem('cookieConsent');
+            alert('Preferenze cookie reimpostate. Verrai reindirizzato alla pagina principale.');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

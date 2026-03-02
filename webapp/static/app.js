@@ -163,11 +163,104 @@ const el = {
     snapStrengthValue: $('snap-strength-value'),
     alignBtn: $('align-btn'),
     
-    toastContainer: $('toast-container')
+    toastContainer: $('toast-container'),
+    
+    // Cookie banner
+    cookieBanner: $('cookie-banner'),
+    cookieAccept: $('cookie-accept'),
+    cookieEssential: $('cookie-essential')
+};
+
+// ==================== Cookie Manager ====================
+const CookieManager = {
+    init() {
+        if (!this.getConsent()) {
+            this.showBanner();
+        }
+        this.setupListeners();
+        this.applyConsent(this.getConsent());
+    },
+    
+    showBanner() {
+        if (el.cookieBanner) {
+            el.cookieBanner.style.display = 'block';
+        }
+    },
+    
+    hideBanner() {
+        if (el.cookieBanner) {
+            el.cookieBanner.style.display = 'none';
+        }
+    },
+    
+    setupListeners() {
+        if (el.cookieEssential) {
+            el.cookieEssential.addEventListener('click', () => {
+                this.saveConsent({ essential: true, analytics: false });
+                this.hideBanner();
+                toast('Preferenze cookie salvate', 'success');
+            });
+        }
+        
+        if (el.cookieAccept) {
+            el.cookieAccept.addEventListener('click', () => {
+                this.saveConsent({ essential: true, analytics: true });
+                this.hideBanner();
+                this.enableAnalytics();
+                toast('Preferenze cookie salvate', 'success');
+            });
+        }
+    },
+    
+    saveConsent(consent) {
+        localStorage.setItem('cookieConsent', JSON.stringify({
+            ...consent,
+            timestamp: new Date().toISOString(),
+            version: '1.0'
+        }));
+    },
+    
+    getConsent() {
+        const saved = localStorage.getItem('cookieConsent');
+        return saved ? JSON.parse(saved) : null;
+    },
+    
+    applyConsent(consent) {
+        if (!consent) return;
+        
+        if (!consent.analytics) {
+            this.blockAnalytics();
+        } else {
+            this.enableAnalytics();
+        }
+    },
+    
+    blockAnalytics() {
+        // Disable any analytics tracking
+        window['ga-disable-G-XXXXXXX'] = true;
+        console.log('[CookieManager] Analytics disabled');
+    },
+    
+    enableAnalytics() {
+        // Enable analytics if consented
+        window['ga-disable-G-XXXXXXX'] = false;
+        console.log('[CookieManager] Analytics enabled');
+    },
+    
+    resetConsent() {
+        localStorage.removeItem('cookieConsent');
+        this.showBanner();
+    },
+    
+    hasConsent(type) {
+        const consent = this.getConsent();
+        return consent && consent[type] === true;
+    }
 };
 
 // ==================== Initialize ====================
 document.addEventListener('DOMContentLoaded', async () => {
+    CookieManager.init();
     setupEventListeners();
     setupKeyboardShortcuts();
     await loadPresets();
