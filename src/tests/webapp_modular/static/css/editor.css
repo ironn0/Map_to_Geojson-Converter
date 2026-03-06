@@ -1,0 +1,165 @@
+/**
+ * ✏️ Editor & Toolbar Styles
+ * Polygon editor SVG, toolbar, vertices, drawing preview
+ */
+
+/* Polygon Editor SVG Overlay */
+#polygon-editor {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#polygon-editor .polygon-path {
+    fill: rgba(99, 102, 241, 0.15);
+    stroke: var(--primary);
+    stroke-width: 2;
+    cursor: pointer;
+    pointer-events: all;
+    transition: fill 0.15s ease;
+}
+
+#polygon-editor .polygon-path:hover {
+    fill: rgba(99, 102, 241, 0.3);
+}
+
+#polygon-editor .polygon-path.selected {
+    fill: rgba(99, 102, 241, 0.4);
+    stroke-width: 3;
+    stroke: var(--primary);
+}
+
+/* Vertices */
+#polygon-editor .vertex {
+    fill: var(--primary);
+    stroke: white;
+    stroke-width: 2;
+    cursor: move;
+    pointer-events: all;
+    transition: transform 0.1s ease;
+}
+
+#polygon-editor .vertex:hover {
+    transform: scale(1.3);
+}
+
+#polygon-editor .vertex.selected {
+    fill: var(--warning);
+    stroke-width: 3;
+}
+
+/* Midpoints for adding vertices */
+#polygon-editor .midpoint {
+    fill: var(--bg-tertiary);
+    stroke: var(--primary);
+    stroke-width: 1.5;
+    cursor: pointer;
+    pointer-events: all;
+    opacity: 0.6;
+    transition: all 0.15s ease;
+}
+
+#polygon-editor .midpoint:hover {
+    opacity: 1;
+    fill: var(--primary);
+    stroke: white;
+    transform: scale(1.5);
+}
+
+/* Points */
+#polygon-editor .map-point {
+    fill: var(--warning);
+    stroke: white;
+    stroke-width: 2;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+#polygon-editor .map-point:hover {
+    fill: #fbbf24;
+}
+
+#polygon-editor .map-point.selected {
+    fill: #f97316;
+    stroke-width: 3;
+}
+
+#polygon-editor .point-label {
+    fill: white;
+    font-size: 11px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    pointer-events: none;
+}
+
+/* Drawing preview */
+#polygon-editor .drawing-preview .drawing-line {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 2;
+    stroke-dasharray: 6 3;
+}
+
+#polygon-editor .drawing-preview .drawing-vertex {
+    fill: var(--success);
+    stroke: white;
+    stroke-width: 2;
+}
+
+/* Editor toolbar */
+#editor-toolbar {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 8px 12px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+#editor-toolbar.visible {
+    display: flex;
+}
+
+#editor-toolbar .separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+#selection-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-right: 8px;
+    min-width: 100px;
+}
+
+#selection-label.has-selection {
+    color: var(--text);
+}
+
+#vertex-tools,
+#draw-tools {
+    display: flex;
+    gap: 4px;
+}
+
+#vertex-tools.hidden,
+#draw-tools.hidden {
+    display: none;
+}
+
+/* Canvas cursor based on tool */
+[data-tool="select"] { cursor: default; }
+[data-tool="edit"] { cursor: crosshair; }
+[data-tool="move"] { cursor: move; }
+[data-tool="scale"] { cursor: ns-resize; }
+[data-tool="draw-polygon"] { cursor: crosshair; }
+[data-tool="draw-point"] { cursor: crosshair; }

@@ -74,3 +74,26 @@ A new approach using **Point-in-Polygon** instead of shape matching:
 - Calibration needs fine-tuning for perfect alignment
 - Only Italy GADM database included so far
 - Edge regions may fall outside expected boundaries
+
+---
+
+## 🌍 Web App - African Kingdoms Example
+
+The latest version includes a **web-based interface** with significant improvements in region detection and georeferencing accuracy.
+
+### Input: Historical Map of African Kingdoms
+![Raw Map Input](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/img_raw_webapp.png)
+
+A historical map showing various African kingdoms (Dendi, Hausa, Bornu, Oyo, Benin) was processed through the webapp.
+
+### Output: Georeferenced GeoJSON on Real Map
+![GeoJSON Result](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/img_result_geojson.png)
+
+The extracted regions are now properly georeferenced and placed on real-world coordinates!
+
+### What's Improved
+- **Better edge detection**: Cleaner polygon boundaries with less noise
+- **Interactive georeferencing**: Drag corners to align the map precisely
+- **Real-time preview**: See your regions on an actual map before exporting
+- **Multiple region support**: Handles complex maps with many overlapping territories
+- **Web interface**: No installation required, works directly in browser

@@ -1,12 +1,26 @@
-transformers>=4.30.0
-torch>=2.0.0
-torchvision>=0.15.0
-torchaudio>=2.0.0
-pillow>=10.0.0
-numpy>=1.24.0
+# ===========================================
+# Map to GeoJSON Converter - Dependencies
+# ===========================================
+
+# --- Web App (FastAPI) ---
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+
+# --- Image Processing ---
 opencv-python>=4.8.0
-geopandas>=0.13.0
-shapely>=2.0.0
-folium>=0.14.0
-flask>=2.3.0
+numpy>=1.24.0
+Pillow>=10.0.0
 scipy>=1.11.0
+
+# --- Geospatial ---
+shapely>=2.0.0
+geopandas>=0.13.0
+folium>=0.14.0
+
+# --- Optional: AI/SAM Segmentation ---
+# Uncomment if you want to use SAM (Segment Anything Model)
+# transformers>=4.30.0
+# torch>=2.0.0
+# torchvision>=0.15.0
