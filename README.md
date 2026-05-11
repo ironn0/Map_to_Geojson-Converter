@@ -25,7 +25,7 @@ A free, open-source tool to convert map images (PNG, JPG) and SVG files into Geo
 ## Highlights
 
 - 🆓 **Free & Open-Source**: No costs, ideal for students and researchers.
-- � **Web Interface**: Modern browser-based app with interactive georeferencing.
+- 🌐 **Web Interface**: Modern browser-based app with interactive georeferencing.
 - 🎨 **AI-Powered**: Uses K-Means segmentation and edge detection for automatic polygon extraction.
 - 🗺️ **Multiple Inputs**: Supports images (PNG, JPG, WebP) and SVG files.
 - 📦 **GeoJSON Export**: Outputs standard GeoJSON FeatureCollection.

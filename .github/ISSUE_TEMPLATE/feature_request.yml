@@ -43,6 +43,17 @@ body:
       default: 2
     validations:
       required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Target milestone
+      options:
+        - M1 Core Reliability
+        - M2 Quality Baseline Expansion
+        - M3 Architecture Cleanup
+        - M4 v1 Product Readiness
+    validations:
+      required: true
   - type: textarea
     id: acceptance
     attributes:

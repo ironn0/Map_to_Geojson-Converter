@@ -9,7 +9,7 @@
 - [ ] Issue has one `area:*` label
 - [ ] Issue has one `prio:*` label
 - [ ] Issue is in the correct milestone (M1-M4)
-- [ ] Issue/PR is marked `ready` before review
+- [ ] Linked issue is marked `ready` before implementation
 
 ## Testing
 - [ ] `python scripts/verify.py`
