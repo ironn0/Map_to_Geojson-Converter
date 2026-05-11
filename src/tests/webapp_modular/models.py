@@ -6,9 +6,11 @@ Author: Map to GeoJSON Converter Project
 """
 
 from pydantic import BaseModel
+from pydantic import model_validator
 from typing import List, Optional, Dict, Tuple
 from dataclasses import dataclass
 import numpy as np
+import math
 
 
 # ==================== Dataclasses ====================
@@ -32,6 +34,24 @@ class GeoBounds(BaseModel):
     south: float = 35.5
     east: float = 18.5
     west: float = 6.6
+
+    @model_validator(mode="after")
+    def validate_bounds(self):
+        values = [self.north, self.south, self.east, self.west]
+        if not all(math.isfinite(v) for v in values):
+            raise ValueError("I confini geografici devono essere numeri finiti")
+
+        if self.north <= self.south:
+            raise ValueError("north deve essere maggiore di south")
+        if self.east <= self.west:
+            raise ValueError("east deve essere maggiore di west")
+
+        if not (-90 <= self.south <= 90 and -90 <= self.north <= 90):
+            raise ValueError("Le latitudini devono essere comprese tra -90 e 90")
+        if not (-180 <= self.west <= 180 and -180 <= self.east <= 180):
+            raise ValueError("Le longitudini devono essere comprese tra -180 e 180")
+
+        return self
 
 
 class SegmentRequest(BaseModel):

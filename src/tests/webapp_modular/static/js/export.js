@@ -8,7 +8,7 @@
 import { state } from './state.js';
 import { el } from './dom.js';
 import { toast, showLoading, hideLoading } from './ui.js';
-import { getBounds } from './georef.js';
+import { getBounds, validateBounds } from './georef.js';
 import * as api from './api.js';
 
 /**
@@ -36,6 +36,11 @@ export async function generateGeoJSON() {
         };
         
         const bounds = getBounds();
+        if (!validateBounds(bounds)) {
+            toast('Bounds geografici non validi. Correggi i campi prima dell\'export.', 'error');
+            return null;
+        }
+
         const backendRegions = state.regions.filter(r => !r.clientSide);
         const clientRegions = state.regions.filter(r => r.clientSide);
         

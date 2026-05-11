@@ -13,12 +13,18 @@ class Georeferencer:
     """Converte coordinate pixel in coordinate geografiche"""
     
     def __init__(self, width: int, height: int, bounds: Dict):
+        if width <= 0 or height <= 0:
+            raise ValueError("Dimensioni immagine non valide per la georeferenziazione")
+
         self.width = width
         self.height = height
         self.north = bounds.get('north', 90)
         self.south = bounds.get('south', -90)
         self.east = bounds.get('east', 180)
         self.west = bounds.get('west', -180)
+
+        if self.north <= self.south or self.east <= self.west:
+            raise ValueError("Confini geografici non validi")
         
         self.lon_per_pixel = (self.east - self.west) / self.width
         self.lat_per_pixel = (self.north - self.south) / self.height
@@ -37,7 +43,13 @@ class Georeferencer:
     
     def contour_to_coords(self, contour: np.ndarray) -> List[List[float]]:
         """Converte un contorno di pixel in coordinate geografiche"""
+        if contour is None or contour.size == 0:
+            raise ValueError("Contorno vuoto o non valido")
+
         points = contour.reshape(-1, 2) if len(contour.shape) == 3 else contour
+        if len(points) < 3:
+            raise ValueError("Un poligono richiede almeno 3 punti")
+
         coords = [list(self.pixel_to_coord(int(x), int(y))) for x, y in points]
         # Chiudi il poligono
         if coords and coords[0] != coords[-1]:

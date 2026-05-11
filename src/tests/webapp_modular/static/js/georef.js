@@ -26,6 +26,21 @@ export function getBounds() {
 }
 
 /**
+ * Valida bounds geografici prima delle chiamate API.
+ * @param {Object} bounds
+ * @returns {boolean}
+ */
+export function validateBounds(bounds) {
+    const values = [bounds.north, bounds.south, bounds.east, bounds.west];
+    if (values.some(v => !Number.isFinite(v))) return false;
+    if (bounds.north <= bounds.south) return false;
+    if (bounds.east <= bounds.west) return false;
+    if (bounds.north > 90 || bounds.south < -90) return false;
+    if (bounds.east > 180 || bounds.west < -180) return false;
+    return true;
+}
+
+/**
  * Gestisce cambio preset
  */
 export function handlePresetChange() {
@@ -222,6 +237,12 @@ export function applyGeoref() {
         toast('Errore nella georeferenziazione', 'error'); 
         return; 
     }
+
+    const rotation = parseFloat(el.georefRotation.value);
+    if (rotation !== 0) {
+        toast('Imposta rotazione a 0° prima di applicare: export supporta solo bounds assiali', 'warning');
+        return;
+    }
     
     const b = state.imageOverlay.getBounds();
     el.boundNorth.value = b.getNorth().toFixed(4);
@@ -291,9 +312,15 @@ export async function alignToTerritories(displayImage, updateRegionsList) {
     showLoading('Allineamento ai confini reali...');
     
     try {
+        const bounds = getBounds();
+        if (!validateBounds(bounds)) {
+            toast('Bounds non validi. Controlla nord/sud/est/ovest.', 'error');
+            return;
+        }
+
         const requestBody = {
             session_id: state.sessionId,
-            bounds: getBounds(),
+            bounds: bounds,
             snap_strength: parseFloat(el.snapStrength.value)
         };
         

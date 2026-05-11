@@ -34,7 +34,7 @@ The tool automatically:
 1. Place your map image in this folder (or any location).
 2. Run the conversion script:
    ```bash
-   python "src/tests/test with ai/image_to_geojson_auto.py"
+   python "src/tests/test SAM/map_to_geojson.py"
    ```
 3. Enter the path to your image when prompted.
 4. Choose calibration method (Italy preset recommended for Italian maps).

@@ -59,11 +59,11 @@ webapp_modular/
 ## 🚀 Avvio
 
 ```bash
-# Dalla directory webapp_modular
-cd src/tests/webapp_modular
+# Dalla root del repository
+pip install -r requirements.txt
 
-# Installa dipendenze
-pip install -r ../webapp/requirements.txt
+# Vai nella webapp modulare
+cd src/tests/webapp_modular
 
 # Avvia il server
 uvicorn main:app --reload --port 8000
@@ -88,7 +88,7 @@ Classe `MapSegmenter` per:
 - Approssimazione poligoni (Douglas-Peucker)
 
 ### georeferencing/georeferencer.py
-Classe `GeoReferencer` per la conversione coordinate pixel → geo.
+Classe `Georeferencer` per la conversione coordinate pixel → geo.
 
 ### georeferencing/aligner.py
 Classe `TerritoryAligner` per allineare le regioni a confini reali.
@@ -116,6 +116,7 @@ Editor SVG per modifica poligoni: selezione, modifica vertici, spostamento, scal
 
 ### georef.js
 Georeferenziazione interattiva con Leaflet.js.
+Nota: l'export supporta bounds assiali; la rotazione va riportata a 0° prima di applicare.
 
 ### export.js
 Generazione e download GeoJSON.

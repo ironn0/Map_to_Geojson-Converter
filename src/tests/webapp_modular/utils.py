@@ -63,6 +63,32 @@ def validate_bounds(bounds: Dict) -> bool:
     return True
 
 
+def validate_contour(contour: np.ndarray) -> bool:
+    """Valida un contorno OpenCV prima della conversione geospaziale."""
+    if contour is None:
+        return False
+
+    if not isinstance(contour, np.ndarray):
+        return False
+
+    if contour.size == 0:
+        return False
+
+    # Accept both OpenCV contour shapes: (N, 1, 2) and (N, 2)
+    if contour.ndim == 3 and contour.shape[-2:] != (1, 2):
+        return False
+    if contour.ndim == 2 and contour.shape[-1] != 2:
+        return False
+    if contour.ndim not in (2, 3):
+        return False
+
+    points = contour.reshape(-1, 2)
+    if len(points) < 3:
+        return False
+
+    return np.isfinite(points).all()
+
+
 def color_hex_to_bgr(hex_color: str) -> tuple:
     """Converte colore hex in BGR"""
     hex_color = hex_color.lstrip('#')

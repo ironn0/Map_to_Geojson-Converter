@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/icon.svg" alt="Map to GeoJSON Converter" width="200"/>
+  <img src="https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/icon.svg" alt="Map to GeoJSON Converter" width="200"/>
 </p>
 
 <h1 align="center">Map to GeoJSON Converter</h1>
 
 <p align="center">
-  <a href="https://github.com/ironn0/Map_to_Geojson-Converter/releases/tag/v0.1.3"><img src="https://img.shields.io/badge/version-0.1.3-blue" alt="Version"/></a>
+  <a href="https://github.com/ironn0/Map_to_Geojson-Converter/releases/tag/v0.0.9"><img src="https://img.shields.io/badge/version-0.0.9-blue" alt="Version"/></a>
   <a href="https://github.com/ironn0/Map_to_Geojson-Converter"><img src="https://img.shields.io/badge/status-beta-green" alt="Status"/></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.8%2B-blue" alt="Python"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License"/></a>
@@ -73,10 +73,16 @@ The latest version includes a **full-featured web interface** for easy map conve
 - ✏️ **Polygon Editor**: Edit, merge, split, and rename regions
 - 💾 **One-Click Export**: Download GeoJSON ready for GIS software
 
+### Repository Layout (Current)
+- `src/tests/webapp_modular/` → main FastAPI web application (actively maintained)
+- `src/tests/webapp/` → legacy monolithic web app (reference only)
+- `src/tests/test SAM/` → experimental CLI/SAM scripts
+- `docs/` → feasibility, project management, and policy docs
+
 ### Quick Start (Web App)
 ```bash
-cd src/tests/webapp_modular
 pip install -r requirements.txt
+cd src/tests/webapp_modular
 uvicorn main:app --reload
 ```
 Open http://localhost:8000 in your browser.
@@ -136,9 +142,6 @@ Then open **http://localhost:8000** in your browser.
 ```bash
 # Image to GeoJSON with AI
 python "src/tests/test SAM/map_to_geojson.py"
-
-# SVG to GeoJSON
-python "src/test svg to geojson/Svg_to_Geojson_Converter.py"
 ```
 
 ---
@@ -149,7 +152,7 @@ python "src/test svg to geojson/Svg_to_Geojson_Converter.py"
 3. Choose calibration (Italy preset or manual).
 4. Outputs: GeoJSON file and debug images.
 
-For detailed pipeline, see `src/test con ai/pipeline.md`.
+For implementation details, see `src/tests/webapp_modular/README.md`.
 
 ---
 
@@ -172,7 +175,7 @@ For detailed pipeline, see `src/test con ai/pipeline.md`.
 - **Georeferencing**: Map pixels to coordinates.
 - **Export**: Generate GeoJSON with properties (id, color, area).
 
-See `src/test con ai/pipeline.md` for full architecture.
+See `src/tests/webapp_modular/README.md` for module-level architecture.
 
 ---
 
@@ -189,7 +192,7 @@ See `src/test con ai/pipeline.md` for full architecture.
 - ✅ ~~Web interface~~ - **Completed!**
 - Future: Batch processing, AI-assisted labeling, territory alignment with official borders.
 
-See `docs/feasibility/StudioDiFattibilità.md` for detailed feasibility study.
+See `docs/feasibility/README.md` for the feasibility study.
 
 ---
 
@@ -204,10 +207,11 @@ For requirements gathering, see `docs/feasibility/requirements/`.
 ---
 
 ## Documentation
-- **Web App**: `src/tests/webapp/README.md`
-- **Modular Version**: `src/tests/webapp_modular/README.md`
+- **Web App (current)**: `src/tests/webapp_modular/README.md`
+- **Web App (legacy)**: `src/tests/webapp/README.md`
 - **Feasibility Study**: `docs/feasibility/README.md`
 - **Requirements**: `docs/feasibility/requirements/`
+- **v1.0 Roadmap**: `docs/ROADMAP_V1.md`
 - **Contributing**: `CONTRIBUTING.md`
 - **Examples**: `examples/`
 - **Changelog**: `CHANGELOG.md`
@@ -215,9 +219,9 @@ For requirements gathering, see `docs/feasibility/requirements/`.
 ---
 
 ## References
-- **Web App**: `src/tests/webapp/` - Full-featured browser interface
-- **Modular Version**: `src/tests/webapp_modular/` - Refactored codebase
-- **CLI Tools**: `src/tests/test SAM/` - Command-line scripts
+- **Web App (current)**: `src/tests/webapp_modular/` - modular FastAPI app + static frontend
+- **Web App (legacy)**: `src/tests/webapp/` - previous monolithic implementation
+- **CLI Tools / Experiments**: `src/tests/test SAM/` - command-line and prototype scripts
 - Inspired by open-source GIS tools like QGIS and GDAL.
 - For feedback, open GitHub Issues or Discussions.
 

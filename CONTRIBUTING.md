@@ -26,8 +26,8 @@ Thank you for your interest in contributing! This project is open-source and stu
 
 ## Development Setup
 1. Clone the repo: `git clone https://github.com/ironn0/Map_to_Geojson-Converter.git`
-2. Install dependencies: `pip install -r requirements.txt`
-3. Run tests: `python -m pytest tests/` (if tests exist)
+2. Install dependencies: `pip install -r requirements-dev.txt`
+3. Run quality checks: `python scripts/verify.py`
 4. Test your changes locally.
 
 ## Code Style

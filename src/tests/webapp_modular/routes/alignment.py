@@ -12,7 +12,7 @@ import numpy as np
 
 from models import AlignRequest
 from georeferencing import Georeferencer, TerritoryAligner
-from utils import image_to_base64, region_to_dict
+from utils import image_to_base64, region_to_dict, validate_bounds, validate_contour
 from session_manager import sessions
 
 router = APIRouter(prefix="/api", tags=["alignment"])
@@ -33,18 +33,32 @@ async def align_territories(req: AlignRequest):
     
     if not regions:
         raise HTTPException(400, "Nessuna regione da allineare")
+
+    bounds_dict = req.bounds.model_dump()
+    if not validate_bounds(bounds_dict):
+        raise HTTPException(400, "Confini geografici non validi")
     
     # Crea georeferencer per convertire pixel -> coordinate
-    georef = Georeferencer(
-        session["width"],
-        session["height"],
-        req.bounds.model_dump()
-    )
+    try:
+        georef = Georeferencer(
+            session["width"],
+            session["height"],
+            bounds_dict
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     
     # Converti regioni in GeoJSON features
     features = []
     for i, region in enumerate(regions):
-        coords = georef.contour_to_coords(region.contour)
+        if not validate_contour(region.contour):
+            raise HTTPException(400, f"Contorno non valido per la regione {i}")
+
+        try:
+            coords = georef.contour_to_coords(region.contour)
+        except ValueError as e:
+            raise HTTPException(400, f"Errore geometria regione {i}: {str(e)}")
+
         features.append({
             "type": "Feature",
             "properties": {"id": i, "name": region.name or f"Regione {i + 1}"},
