@@ -1,0 +1,61 @@
+name: Tech debt
+description: Track refactors, cleanup, and maintainability improvements
+title: "[Tech Debt]: "
+labels:
+  - type:tech-debt
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for non-user-facing maintenance work.
+  - type: input
+    id: debt
+    attributes:
+      label: Debt summary
+      placeholder: Duplicate pixel-to-geo conversion logic in two modules
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area:backend
+        - area:frontend
+        - area:docs
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Target milestone
+      options:
+        - M1 Core Reliability
+        - M2 Quality Baseline Expansion
+        - M3 Architecture Cleanup
+        - M4 v1 Product Readiness
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - prio:P0
+        - prio:P1
+        - prio:P2
+      default: 2
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact if not addressed
+      description: Explain risk and maintenance cost
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Proposed approach
+      description: Suggested implementation or migration plan

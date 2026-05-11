@@ -1,0 +1,56 @@
+name: Feature request
+description: Propose a user-facing or technical enhancement
+title: "[Feature]: "
+labels:
+  - type:feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem first, then the proposed improvement.
+  - type: input
+    id: problem
+    attributes:
+      label: Problem statement
+      placeholder: Users cannot preview simplification tolerance before export
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should change, and why?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area:backend
+        - area:frontend
+        - area:docs
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - prio:P0
+        - prio:P1
+        - prio:P2
+      default: 2
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checklist of behavior needed to close this issue
+      placeholder: |
+        - [ ] UI exposes tolerance input
+        - [ ] API validates tolerance range
+        - [ ] Docs updated
+    validations:
+      required: true

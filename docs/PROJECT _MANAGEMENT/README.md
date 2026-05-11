@@ -6,6 +6,16 @@ v1.0.0 - 2026-03-07
 
 ---
 
+## Operational PM Workflow (GitHub Projects)
+
+Execution governance for roadmap delivery is documented in:
+
+- `docs/PROJECT _MANAGEMENT/GITHUB_PROJECTS_WORKFLOW.md`
+
+This includes board columns, label taxonomy, milestone mapping (`M1`-`M4`), governance cadence, and release flow.
+
+---
+
 # Project Objectives
 
 Project objectives define the specific results that the project aims to achieve. These objectives should be clear, measurable, and realistic, allowing for evaluation of project success upon completion.
@@ -240,8 +250,8 @@ The chosen organizational structure balances result orientation with the flexibi
 
 ## References
 
-- [Main README](../README.md)
-- [Feasibility Study](feasibility/README.md)
-- [Contributing Guide](../CONTRIBUTING.md)
-- [Use Cases](../USE_CASES.md)
-- [Competitor Analysis](feasibility/requirements/Competitor_Analysis.md)
+- [Main README](../../README.md)
+- [Feasibility Study](../feasibility/README.md)
+- [Contributing Guide](../../CONTRIBUTING.md)
+- [Use Cases](../../USE_CASES.md)
+- [Competitor Analysis](../feasibility/requirements/Competitor_Analysis.md)

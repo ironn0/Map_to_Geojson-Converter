@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a defect or regression
+title: "[Bug]: "
+labels:
+  - type:bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please provide enough detail to reproduce it quickly.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One-line description of the bug
+      placeholder: Export endpoint returns 500 for empty contour payload
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which area is most impacted?
+      options:
+        - area:backend
+        - area:frontend
+        - area:docs
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - prio:P0
+        - prio:P1
+        - prio:P2
+      default: 1
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include input files and route/page if relevant
+      placeholder: |
+        1. Open the web app
+        2. Upload sample map
+        3. Click Export
+        4. Observe error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Paste stack traces, screenshots, and links

@@ -6,6 +6,16 @@ This roadmap translates the current technical gaps into measurable milestones.
 - Primary runtime path: `src/tests/webapp_modular/`
 - Quality gates: `python scripts/verify.py` and CI workflow in `.github/workflows/ci.yml`
 - Version target: `v1.0.0`
+- PM execution workflow: `docs/PROJECT _MANAGEMENT/GITHUB_PROJECTS_WORKFLOW.md`
+
+## PM execution model
+
+Roadmap delivery is governed through the GitHub Projects workflow:
+
+- Every issue is mapped to exactly one roadmap milestone (`M1`-`M4`).
+- Prioritization is expressed with `prio:P0` / `prio:P1` / `prio:P2`.
+- Execution follows board states (`Backlog` -> `Ready` -> `In Progress` -> `In Review` -> `Done`).
+- Release readiness requires milestone acceptance criteria and green quality checks.
 
 ## Milestone plan
 

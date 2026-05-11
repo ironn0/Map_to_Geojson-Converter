@@ -15,6 +15,7 @@ A free, open-source tool to convert map images (PNG, JPG) and SVG files into Geo
 - [Algorithm Overview](#algorithm-overview)
 - [Outputs](#outputs)
 - [Limitations & Roadmap](#limitations--roadmap)
+- [Project Management Workflow](#project-management-workflow)
 - [Contributing](#contributing)
 - [Documentation](#documentation)
 - [References](#references)
@@ -217,6 +218,30 @@ We welcome contributions! Open issues or PRs. Focus areas:
 
 For requirements gathering, see `docs/feasibility/requirements/`.
 
+Use the repository PM workflow defined in `docs/PROJECT _MANAGEMENT/GITHUB_PROJECTS_WORKFLOW.md`:
+
+- Open issues using the provided templates and required labels.
+- Assign each issue to roadmap milestones M1-M4.
+- Link PRs to issues and move work across board states.
+
+---
+
+## Project Management Workflow
+
+The project uses a GitHub Projects-centered workflow for planning and delivery:
+
+- Board columns: `Backlog`, `Ready`, `In Progress`, `In Review`, `Done`.
+- Required labels: `type:`*, `area:*`, `prio:*`, plus `ready` when refined.
+- Milestone alignment: `M1 Core Reliability` to `M4 v1 Product Readiness`.
+
+Bootstrap labels/milestones quickly:
+
+```bash
+python scripts/bootstrap_github_pm.py
+```
+
+Full process guide: `docs/PROJECT _MANAGEMENT/GITHUB_PROJECTS_WORKFLOW.md`.
+
 ---
 
 ## Documentation
@@ -226,6 +251,8 @@ For requirements gathering, see `docs/feasibility/requirements/`.
 - **Feasibility Study**: `docs/feasibility/README.md`
 - **Requirements**: `docs/feasibility/requirements/`
 - **v1.0 Roadmap**: `docs/ROADMAP_V1.md`
+- **PM Workflow Guide**: `docs/PROJECT _MANAGEMENT/GITHUB_PROJECTS_WORKFLOW.md`
+- **PM Foundation Doc**: `docs/PROJECT _MANAGEMENT/README.md`
 - **Contributing**: `CONTRIBUTING.md`
 - **Examples**: `examples/`
 - **Changelog**: `CHANGELOG.md`

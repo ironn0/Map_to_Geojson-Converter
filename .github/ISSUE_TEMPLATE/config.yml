@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/ironn0/Map_to_Geojson-Converter/discussions
+    about: Use discussions for Q&A and ideas that are not actionable issues.
