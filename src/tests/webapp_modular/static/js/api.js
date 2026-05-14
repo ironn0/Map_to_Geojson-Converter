@@ -17,10 +17,20 @@ export async function api(endpoint, options = {}) {
         ...options 
     });
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || 'Errore API');
+        const error = await parseErrorResponse(res);
+        throw new Error(error);
     }
     return res.json();
+}
+
+async function parseErrorResponse(response) {
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        const payload = await response.json();
+        return payload.detail || payload.message || `Errore API (${response.status})`;
+    }
+    const text = await response.text();
+    return text?.trim() || `Errore API (${response.status})`;
 }
 
 /**
@@ -51,8 +61,7 @@ export async function uploadImage(file) {
     });
     
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Errore nel caricamento');
+        throw new Error(await parseErrorResponse(response));
     }
     
     return response.json();
@@ -145,11 +154,10 @@ export async function uploadReferenceGeoJSON(file) {
     });
     
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Errore nel caricamento');
+        throw new Error(await parseErrorResponse(response));
     }
-    
-    return response.json();
+    const data = await response.json();
+    return data;
 }
 
 /**
@@ -159,4 +167,16 @@ export async function uploadReferenceGeoJSON(file) {
  */
 export async function deleteSession(sessionId) {
     return api(`/session/${sessionId}`, { method: 'DELETE' });
+}
+
+/**
+ * Crea una nuova regione lato backend
+ * @param {Object} params - session_id, points, name?, color?
+ * @returns {Promise<Object>}
+ */
+export async function addRegion(params) {
+    return api('/add-region', {
+        method: 'POST',
+        body: JSON.stringify(params),
+    });
 }

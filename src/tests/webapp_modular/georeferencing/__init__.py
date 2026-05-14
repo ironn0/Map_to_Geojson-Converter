@@ -5,7 +5,8 @@ Moduli per la georeferenziazione e allineamento territoriale
 Author: Map to GeoJSON Converter Project
 """
 
-from .georeferencer import Georeferencer
 from .aligner import TerritoryAligner
+from .geometry_quality import sanitize_polygon_geometry
+from .georeferencer import Georeferencer
 
-__all__ = ['Georeferencer', 'TerritoryAligner']
+__all__ = ["Georeferencer", "TerritoryAligner", "sanitize_polygon_geometry"]

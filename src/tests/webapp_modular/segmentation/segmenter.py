@@ -5,9 +5,11 @@ Classe principale per la segmentazione delle immagini di mappe
 Author: Map to GeoJSON Converter Project
 """
 
-import numpy as np
+from typing import Dict, List, Optional, Tuple
+
 import cv2
-from typing import List, Optional, Tuple
+import numpy as np
+from config import ROBUST_SEGMENTATION_DEFAULTS
 from models import ExtractedRegion
 
 
@@ -19,10 +21,11 @@ class MapSegmenter:
         self.height, self.width = image.shape[:2]
         self.regions: List[ExtractedRegion] = []
         self.edges = None
+        self.last_profile = "legacy"
         self._preprocess()
     
     def _preprocess(self):
-        """Pre-elaborazione dell'immagine per migliorare la segmentazione"""
+        """Pre-elaborazione legacy per compatibilita retroattiva."""
         # Converti in grayscale
         gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
         
@@ -35,12 +38,91 @@ class MapSegmenter:
         # Dilata leggermente i bordi per chiuderli meglio
         kernel = np.ones((2, 2), np.uint8)
         self.edges = cv2.dilate(self.edges, kernel, iterations=1)
-    
-    def segment(self, n_colors: int = 40, min_area: int = 500) -> List[ExtractedRegion]:
-        """Segmenta usando un approccio ibrido: K-Means + Edge Detection"""
-        
+
+    def _compute_text_suppression_mask(self, gray: np.ndarray) -> np.ndarray:
+        """
+        Euristica leggera per ridurre etichette testuali:
+        usa black-hat + componenti piccole ad alto contrasto.
+        """
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (13, 13))
+        blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, kernel)
+        _, binary = cv2.threshold(blackhat, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(binary, connectivity=8)
+        mask = np.zeros_like(gray, dtype=np.uint8)
+        for idx in range(1, num_labels):
+            x, y, w, h, area = stats[idx]
+            if area < 8:
+                continue
+            # Candidate testo: componenti allungate e piccole.
+            elongation = max(w, h) / max(min(w, h), 1)
+            if area <= 600 and elongation >= 2.5:
+                mask[labels == idx] = 255
+        return cv2.dilate(mask, np.ones((2, 2), np.uint8), iterations=1)
+
+    def _prepare_robust_inputs(self, robust_settings: Dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Pipeline robusta per mappe rumorose/storiche/scansionate."""
+        denoise_strength = float(robust_settings["denoise_strength"])
+        clahe_clip = float(robust_settings["clahe_clip_limit"])
+        block_size = int(robust_settings["adaptive_block_size"])
+        adaptive_c = float(robust_settings["adaptive_c"])
+        morphology_kernel = max(1, int(robust_settings["morphology_kernel"]))
+        text_suppression = bool(robust_settings["text_suppression"])
+
+        if block_size % 2 == 0:
+            block_size += 1
+
+        gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        denoised = cv2.fastNlMeansDenoising(gray, None, denoise_strength, 7, 21)
+
+        clahe = cv2.createCLAHE(clipLimit=clahe_clip, tileGridSize=(8, 8))
+        normalized = clahe.apply(denoised)
+
+        adaptive = cv2.adaptiveThreshold(
+            normalized,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            block_size,
+            adaptive_c,
+        )
+        adaptive = cv2.medianBlur(adaptive, 3)
+
+        edges = cv2.Canny(normalized, 40, 140)
+        edges = cv2.bitwise_or(edges, cv2.bitwise_not(adaptive))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (morphology_kernel, morphology_kernel))
+        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+        edges = cv2.dilate(edges, np.ones((2, 2), np.uint8), iterations=1)
+
+        text_mask = np.zeros_like(gray, dtype=np.uint8)
+        if text_suppression:
+            text_mask = self._compute_text_suppression_mask(normalized)
+
+        enhanced = cv2.cvtColor(normalized, cv2.COLOR_GRAY2BGR)
+        return enhanced, edges, text_mask
+
+    def segment(
+        self,
+        n_colors: int = 40,
+        min_area: int = 500,
+        robust_mode: bool = False,
+        robust_settings: Optional[Dict] = None,
+    ) -> List[ExtractedRegion]:
+        """Segmenta usando K-Means + edge masking con profilo legacy/robust."""
+        profile_cfg = dict(ROBUST_SEGMENTATION_DEFAULTS)
+        if robust_mode:
+            if robust_settings:
+                profile_cfg.update(robust_settings)
+            source_image, edges, text_mask = self._prepare_robust_inputs(profile_cfg)
+            self.last_profile = "robust"
+        else:
+            source_image = self.image
+            edges = self.edges
+            text_mask = np.zeros((self.height, self.width), dtype=np.uint8)
+            self.last_profile = "legacy"
+
         # Converti in LAB per miglior clustering dei colori
-        lab = cv2.cvtColor(self.image, cv2.COLOR_BGR2LAB)
+        lab = cv2.cvtColor(source_image, cv2.COLOR_BGR2LAB)
         pixels = lab.reshape((-1, 3)).astype(np.float32)
         
         # K-Means clustering
@@ -66,13 +148,24 @@ class MapSegmenter:
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
             
             # Sottrai i bordi rilevati per separare meglio le regioni
-            mask = cv2.subtract(mask, self.edges)
+            mask = cv2.subtract(mask, edges)
+            if robust_mode:
+                mask = cv2.subtract(mask, text_mask)
+                artifact_min_component_area = int(profile_cfg.get("artifact_min_component_area", 0))
+                if artifact_min_component_area > 0:
+                    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+                    cleaned = np.zeros_like(mask, dtype=np.uint8)
+                    for idx in range(1, num_labels):
+                        area = stats[idx, cv2.CC_STAT_AREA]
+                        if area >= artifact_min_component_area:
+                            cleaned[labels == idx] = 255
+                    mask = cleaned
             
             # Trova contorni
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
             for contour in contours:
-                region = self._process_contour(contour, min_area)
+                region = self._process_contour(contour, min_area, profile_cfg)
                 if region:
                     regions.append(region)
         
@@ -84,8 +177,14 @@ class MapSegmenter:
         self.regions = regions
         return regions
     
-    def _process_contour(self, contour: np.ndarray, min_area: int) -> Optional[ExtractedRegion]:
+    def _process_contour(
+        self,
+        contour: np.ndarray,
+        min_area: int,
+        profile_cfg: Optional[Dict] = None,
+    ) -> Optional[ExtractedRegion]:
         """Processa un singolo contorno e crea una regione"""
+        contour_cfg = profile_cfg or ROBUST_SEGMENTATION_DEFAULTS
         area = cv2.contourArea(contour)
         if area < min_area:
             return None
@@ -95,7 +194,8 @@ class MapSegmenter:
         hull_area = cv2.contourArea(hull)
         if hull_area > 0:
             solidity = area / hull_area
-            if solidity < 0.3:  # Troppo frammentato
+            solidity_min = float(contour_cfg.get("contour_solidity_min", 0.3))
+            if solidity < solidity_min:  # Troppo frammentato
                 return None
         
         # Colore medio dalla regione originale
@@ -113,12 +213,15 @@ class MapSegmenter:
         
         # Semplifica contorno preservando la forma
         perimeter = cv2.arcLength(contour, True)
-        epsilon = 0.002 * perimeter
+        epsilon_scale = float(contour_cfg.get("contour_smoothing_epsilon_scale", 0.002))
+        epsilon = epsilon_scale * perimeter
         approx = cv2.approxPolyDP(contour, epsilon, True)
         
-        # Assicurati minimo 4 punti
-        if len(approx) < 4:
+        min_points = int(contour_cfg.get("contour_min_points", 4))
+        if len(approx) < min_points:
             approx = contour
+        if len(approx) < min_points:
+            return None
         
         # Centroide
         M = cv2.moments(contour)
@@ -236,7 +339,7 @@ class MapSegmenter:
             centroid=(float(cx), float(cy)),
             area=float(area),
             bbox=(bx, by, bw, bh),
-            color=tuple(int(c) for c in target_color[::-1])
+            color=tuple(int(c) for c in target_color)
         )
     
     def visualize(self, regions: List[ExtractedRegion] = None) -> np.ndarray:
@@ -255,8 +358,22 @@ class MapSegmenter:
         
         for i, region in enumerate(regions):
             color = colors[i % len(colors)]
-            cv2.drawContours(overlay, [region.contour], -1, color, -1)
-            cv2.drawContours(overlay, [region.contour], -1, (255, 255, 255), 2)
+            contour = np.asarray(region.contour)
+            if contour.size == 0:
+                continue
+
+            if contour.ndim == 2 and contour.shape[1] == 2:
+                contour = contour.reshape(-1, 1, 2)
+            elif contour.ndim != 3 or contour.shape[-2:] != (1, 2):
+                continue
+
+            if not np.isfinite(contour).all() or contour.shape[0] < 3:
+                continue
+
+            contour_i32 = np.round(contour).astype(np.int32)
+
+            cv2.drawContours(overlay, [contour_i32], -1, color, -1)
+            cv2.drawContours(overlay, [contour_i32], -1, (255, 255, 255), 2)
             
             cx, cy = int(region.centroid[0]), int(region.centroid[1])
             cv2.circle(overlay, (cx, cy), 6, (0, 0, 0), -1)

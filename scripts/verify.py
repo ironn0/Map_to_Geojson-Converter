@@ -19,8 +19,20 @@ def run(cmd: list[str]) -> int:
 
 def main() -> int:
     checks = [
-        [sys.executable, "-m", "ruff", "check", "tests", "scripts"],
+        [
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "tests",
+            "scripts",
+            "src/tests/webapp_modular",
+            "benchmarks",
+            "--ignore",
+            "E501",
+        ],
         [sys.executable, "-m", "pytest"],
+        [sys.executable, "benchmarks/run_benchmark.py"],
     ]
 
     for cmd in checks:

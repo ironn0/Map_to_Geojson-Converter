@@ -35,10 +35,15 @@ export const state = {
     georefMap: null,
     imageOverlay: null,
     overlayBounds: null,
+    georefInitialBounds: null,
+    georefDirty: false,
+    georefRotationDegrees: 0,
     
     // Territory Alignment
     referenceGeojson: null,
-    referenceName: null
+    referenceName: null,
+    cvReferenceImageBase64: null,
+    cvReferenceImageName: null
 };
 
 /**
@@ -65,6 +70,11 @@ export function resetState() {
     state.drawingPoints = [];
     state.referenceGeojson = null;
     state.referenceName = null;
+    state.cvReferenceImageBase64 = null;
+    state.cvReferenceImageName = null;
+    state.georefInitialBounds = null;
+    state.georefDirty = false;
+    state.georefRotationDegrees = 0;
 }
 
 /**

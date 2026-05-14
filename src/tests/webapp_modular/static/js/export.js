@@ -8,7 +8,13 @@
 import { state } from './state.js';
 import { el } from './dom.js';
 import { toast, showLoading, hideLoading } from './ui.js';
-import { getBounds, validateBounds } from './georef.js';
+import {
+    getBounds,
+    validateBounds,
+    getGeoreferencingPayload,
+    validateCvAutoConfiguration,
+    applyCvQualityFromMetadata,
+} from './georef.js';
 import * as api from './api.js';
 
 /**
@@ -46,11 +52,31 @@ export async function generateGeoJSON() {
         
         // Get backend regions if any
         if (backendRegions.length > 0) {
+            if (!validateCvAutoConfiguration()) {
+                return null;
+            }
+            const georeferencing = getGeoreferencingPayload();
             const backendGeojson = await api.exportGeoJSON({ 
                 session_id: state.sessionId, 
-                bounds: bounds 
+                bounds: bounds,
+                georeferencing: georeferencing || undefined
             });
             geojson.features = backendGeojson.features || [];
+            if (georeferencing) {
+                const georefMeta = backendGeojson?.properties?.georeferencing;
+                if (georefMeta?.fallback_from === 'cv_auto') {
+                    toast(
+                        `cv_auto fallback su legacy (${georefMeta.fallback_reason || 'motivo non disponibile'})`,
+                        'warning',
+                    );
+                } else if (georefMeta?.mode === 'cv_auto') {
+                    toast(`cv_auto applicato (confidence ${georefMeta.cv_confidence})`, 'success');
+                }
+                if (georefMeta?.projection_warning) {
+                    toast(georefMeta.projection_warning, 'warning');
+                }
+                applyCvQualityFromMetadata(georefMeta, Boolean(georeferencing));
+            }
         }
         
         // Add client-side drawn regions

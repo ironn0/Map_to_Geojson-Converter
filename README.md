@@ -26,9 +26,9 @@ A free, open-source tool to convert map images (PNG, JPG) and SVG files into Geo
 
 - 🆓 **Free & Open-Source**: No costs, ideal for students and researchers.
 - 🌐 **Web Interface**: Modern browser-based app with interactive georeferencing.
-- 🎨 **AI-Powered**: Uses K-Means segmentation and edge detection for automatic polygon extraction.
+- 🎨 **AI-Powered**: Uses K-Means segmentation with optional robust preprocessing for noisy/historical maps.
 - 🗺️ **Multiple Inputs**: Supports images (PNG, JPG, WebP) and SVG files.
-- 📦 **GeoJSON Export**: Outputs standard GeoJSON FeatureCollection.
+- 📦 **GeoJSON Export**: Outputs standard GeoJSON FeatureCollection with optional geometry sanitization.
 - 🔄 **Real-time Preview**: See your regions on a real map before exporting.
 
 ---
@@ -66,6 +66,7 @@ The latest version includes a **full-featured web interface** for easy map conve
 - 🖼️ **Drag & Drop Upload**: Simply drop your map image
 - 🎯 **Interactive Segmentation**: Adjust colors and sensitivity in real-time
 - 🗺️ **Visual Georeferencing**: Drag corners on a real map to align your image
+- 📍 **Advanced Georeferencing (opt-in)**: GCP affine/homography + CV semi-automatic registration (`cv_auto`) with confidence/fallback
 - ✏️ **Polygon Editor**: Edit, merge, split, and rename regions
 - 💾 **One-Click Export**: Download GeoJSON ready for GIS software
 
@@ -167,25 +168,37 @@ For implementation details, see `src/tests/webapp_modular/README.md`.
 ## Features
 
 - **Web Interface**: Modern, responsive UI with step-by-step workflow.
-- **Image Conversion**: Extract polygons from map images using K-Means segmentation and edge detection.
+- **Image Conversion**: Extract polygons from map images using legacy or robust segmentation profiles.
 - **SVG Support**: Convert SVG paths to GeoJSON.
-- **Interactive Georeferencing**: Visual corner-dragging on Leaflet map for precise alignment.
+- **Interactive Georeferencing**: Bounds-based conversion by default, optional GCP affine/homography, and opt-in `cv_auto` with confidence checks.
 - **Polygon Editor**: Select, edit vertices, merge, split, duplicate, rename regions.
 - **Manual Drawing**: Add custom polygons and points directly.
 - **Real-time Preview**: See regions on actual geographic map before export.
 - **Debug Visuals**: Segmented and region overlay images.
+- **Benchmark Harness**: KPI-based benchmark checks for precision/recall, spatial error, runtime, and legacy vs `cv_auto` georeferencing delta.
+- **State Consistency**: Geometry edits are synchronized to backend before export to avoid UI/output mismatch.
 
 ---
 
 ## Algorithm Overview
 
-- **Preprocessing**: Image segmentation with K-Means or AI models.
+- **Preprocessing**: Legacy path (K-Means + edges) or robust path (denoise + CLAHE + adaptive threshold + text suppression + contour hardening controls).
 - **Contour Detection**: Use OpenCV to find shapes.
 - **Filtering**: Remove noise, water, etc., based on heuristics.
-- **Georeferencing**: Map pixels to coordinates.
-- **Export**: Generate GeoJSON with properties (id, color, area).
+- **Georeferencing**: Bounds-based linear conversion, optional GCP affine/homography, or opt-in CV registration (`cv_auto`) against a georeferenced raster.
+- **Session Safety**: In-memory sessions use TTL-based cleanup to reduce stale state and temp file accumulation.
+- **Export**: Generate GeoJSON with optional validation/sanitization (invalid rings, self-intersections, multipolygons, simplification).
 
 See `src/tests/webapp_modular/README.md` for module-level architecture.
+
+---
+
+## Compatibility & Fallback Behavior
+
+- **Legacy default remains unchanged**: if you do not send `georeferencing`, export/alignment still use bounds-based mapping.
+- **`cv_auto` is opt-in**: enabled only when `georeferencing.mode = cv_auto` with reference raster + reference bounds.
+- **Safety fallback**: if CV registration quality is low (or registration fails), backend automatically falls back to bounds when `allow_fallback=true`.
+- **Traceable metrics**: responses include georeferencing metadata (`mode`, `cv_confidence`, inlier stats, fallback reason) in GeoJSON `properties`.
 
 ---
 
@@ -223,6 +236,12 @@ Use the repository PM workflow defined in `docs/PROJECT _MANAGEMENT/GITHUB_PROJE
 - Open issues using the provided templates and required labels.
 - Assign each issue to roadmap milestones M1-M4.
 - Link PRs to issues and move work across board states.
+
+Local release checks:
+
+```bash
+python scripts/verify.py
+```
 
 ---
 

@@ -142,6 +142,61 @@
 
                     <div class="panel">
                         <h3 class="panel-title">Allineamento Avanzato</h3>
+
+                        <div class="form-group cv-auto-section">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="cv-auto-enabled">
+                                Modalità CV semi-automatica (opt-in)
+                            </label>
+                            <p class="text-muted">Default consigliato: legacy. Attiva CV solo per mappe difficili.</p>
+                        </div>
+
+                        <div id="cv-auto-controls" class="hidden">
+                            <button id="load-cv-reference-btn" class="btn btn-secondary btn-block">
+                                🖼️ Carica raster di riferimento (CV)
+                            </button>
+                            <input type="file" id="cv-reference-file" accept="image/png,image/jpeg,image/webp" style="display:none">
+
+                            <div id="cv-reference-info" class="reference-info hidden mt-2">
+                                <span class="reference-name" id="cv-reference-name"></span>
+                                <button id="clear-cv-reference-btn" class="btn btn-ghost btn-sm">×</button>
+                            </div>
+
+                            <details class="cv-advanced-options mt-2">
+                                <summary>Opzioni CV avanzate</summary>
+
+                                <div class="input-grid mb-2 mt-2">
+                                    <div class="form-group">
+                                        <label>Ref Nord</label>
+                                        <input type="number" id="cv-ref-bound-north" class="form-control" value="71.5" step="0.1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ref Est</label>
+                                        <input type="number" id="cv-ref-bound-east" class="form-control" value="40.0" step="0.1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ref Sud</label>
+                                        <input type="number" id="cv-ref-bound-south" class="form-control" value="34.5" step="0.1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ref Ovest</label>
+                                        <input type="number" id="cv-ref-bound-west" class="form-control" value="-25.0" step="0.1">
+                                    </div>
+                                </div>
+                                <button id="cv-ref-use-current-bounds-btn" class="btn btn-ghost btn-block mb-2">
+                                    Usa bounds correnti
+                                </button>
+
+                                <div class="form-group mt-2">
+                                    <label>Soglia confidence CV</label>
+                                    <div class="range-wrapper">
+                                        <input type="range" id="cv-confidence-threshold" min="0.1" max="0.9" value="0.35" step="0.05">
+                                        <span class="value" id="cv-confidence-threshold-value">0.35</span>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                        <p id="cv-quality-status" class="cv-quality-status cv-quality-neutral mt-2">Qualità registrazione CV: n/d</p>
                         
                         <button id="load-reference-btn" class="btn btn-secondary btn-block">
                             📄 Carica GeoJSON di riferimento
@@ -152,6 +207,9 @@
                             <span class="reference-name"></span>
                             <button id="clear-reference-btn" class="btn btn-ghost btn-sm">×</button>
                         </div>
+                        <button id="reference-bounds-btn" class="btn btn-ghost btn-block mt-2">
+                            Usa bounds dal GeoJSON di riferimento
+                        </button>
 
                         <div class="form-group mt-2">
                             <label>Forza allineamento</label>
@@ -361,7 +419,13 @@
                             <span class="value" id="georef-opacity-value">70%</span>
                         </div>
                     </div>
-                    <p class="text-muted">Trascina l'immagine per spostarla. Usa gli angoli per ridimensionare.</p>
+                    <div class="input-grid">
+                        <button id="georef-reset" class="btn btn-ghost">Reset posizione</button>
+                        <button id="georef-reset-rotation" class="btn btn-ghost">Reset rotazione</button>
+                        <button id="georef-fit" class="btn btn-ghost">Centra vista</button>
+                    </div>
+                    <p class="text-muted">Trascina per spostare. Ridimensionamento bloccato su proporzioni immagine per evitare distorsioni.</p>
+                    <p class="text-muted">Nota: questo posizionamento usa bounds piani (approssimazione). Per planisferi usa cv_auto + riferimento.</p>
                 </div>
             </div>
             <div class="modal-footer">

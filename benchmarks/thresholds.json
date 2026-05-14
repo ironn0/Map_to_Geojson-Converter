@@ -1,0 +1,11 @@
+{
+  "min_precision": 0.65,
+  "min_recall": 0.65,
+  "max_spatial_error_m": 200000.0,
+  "max_conversion_time_s": 8.0,
+  "iou_match_threshold": 0.3,
+  "cv_auto_min_matches": 8,
+  "cv_auto_inlier_threshold": 3.0,
+  "cv_auto_confidence_threshold": 0.1,
+  "cv_auto_min_improvement_m": -60000.0
+}

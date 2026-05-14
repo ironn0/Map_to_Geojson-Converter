@@ -11,27 +11,21 @@ from pathlib import Path
 # Add the current directory to sys.path for absolute imports
 sys.path.insert(0, str(Path(__file__).parent))
 
+from config import (
+    APP_DESCRIPTION,
+    APP_NAME,
+    APP_VERSION,
+    CORS_ALLOW_CREDENTIALS,
+    CORS_ALLOW_HEADERS,
+    CORS_ALLOW_METHODS,
+    CORS_ORIGINS,
+    STATIC_DIR,
+)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-
-from config import (
-    APP_NAME, 
-    APP_VERSION, 
-    APP_DESCRIPTION,
-    STATIC_DIR,
-    CORS_ORIGINS,
-    CORS_ALLOW_CREDENTIALS,
-    CORS_ALLOW_METHODS,
-    CORS_ALLOW_HEADERS
-)
-from routes import (
-    upload_router,
-    segmentation_router,
-    export_router,
-    alignment_router
-)
+from routes import alignment_router, export_router, segmentation_router, upload_router
 from session_manager import delete_session
 
 # ==================== App Initialization ====================

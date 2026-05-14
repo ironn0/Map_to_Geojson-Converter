@@ -99,6 +99,11 @@
     padding: 0;
 }
 
+.modal-georef .modal-footer {
+    position: relative;
+    z-index: 5;
+}
+
 #georef-map {
     flex: 1;
     min-height: 400px;

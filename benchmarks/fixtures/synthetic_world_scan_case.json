@@ -1,0 +1,42 @@
+{
+  "name": "synthetic_world_scan_case",
+  "image": {
+    "width": 420,
+    "height": 260,
+    "rotation_degrees": 4.0,
+    "skew_x": 0.04,
+    "noise_sigma": 4.0,
+    "add_text_labels": true
+  },
+  "regions": [
+    {
+      "id": "region_west",
+      "color_bgr": [70, 120, 220],
+      "polygon": [[24, 36], [172, 30], [164, 120], [30, 128]]
+    },
+    {
+      "id": "region_center",
+      "color_bgr": [85, 185, 95],
+      "polygon": [[156, 72], [304, 66], [312, 178], [164, 186]]
+    },
+    {
+      "id": "region_east",
+      "color_bgr": [190, 92, 90],
+      "polygon": [[288, 38], [404, 52], [394, 156], [284, 146]]
+    }
+  ],
+  "bounds": {
+    "north": 52.0,
+    "south": 40.0,
+    "east": 22.0,
+    "west": 4.0
+  },
+  "georeferencing": {
+    "mode": "affine",
+    "gcps": [
+      { "pixel_x": 0, "pixel_y": 0, "lon": 4.0, "lat": 52.0 },
+      { "pixel_x": 420, "pixel_y": 0, "lon": 22.0, "lat": 52.0 },
+      { "pixel_x": 0, "pixel_y": 260, "lon": 4.0, "lat": 40.0 }
+    ]
+  }
+}

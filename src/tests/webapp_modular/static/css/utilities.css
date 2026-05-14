@@ -252,6 +252,30 @@
     color: var(--text);
 }
 
+.cv-quality-status {
+    font-size: 12px;
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+}
+
+.cv-quality-neutral {
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+}
+
+.cv-quality-success {
+    color: var(--success);
+    border-color: rgba(34, 197, 94, 0.45);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.cv-quality-warning {
+    color: var(--warning);
+    border-color: rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.12);
+}
+
 /* Helpers */
 .hidden {
     display: none !important;

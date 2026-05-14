@@ -24,7 +24,10 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Lint
-        run: ruff check tests scripts
+        run: ruff check tests scripts src/tests/webapp_modular benchmarks --ignore E501
 
       - name: Tests
         run: pytest
+
+      - name: Benchmarks
+        run: python benchmarks/run_benchmark.py

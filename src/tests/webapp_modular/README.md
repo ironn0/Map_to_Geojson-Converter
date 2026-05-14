@@ -15,11 +15,12 @@ webapp_modular/
 │
 ├── segmentation/               # Modulo segmentazione
 │   ├── __init__.py
-│   └── segmenter.py           # MapSegmenter (K-Means, edge detection)
+│   └── segmenter.py           # MapSegmenter (legacy + robust profile)
 │
 ├── georeferencing/             # Modulo georeferenziazione
 │   ├── __init__.py
-│   ├── georeferencer.py       # Conversione coordinate
+│   ├── georeferencer.py       # Conversione coordinate (bounds/affine/homography/cv_auto)
+│   ├── cv_registration.py     # Registrazione CV semi-automatica (feature matching + RANSAC)
 │   └── aligner.py             # Allineamento ai confini
 │
 ├── routes/                     # Endpoint API
@@ -86,9 +87,21 @@ Classe `MapSegmenter` per:
 - Rilevamento bordi (Canny edge detection)
 - Estrazione contorni (cv2.findContours)
 - Approssimazione poligoni (Douglas-Peucker)
+- Profilo robusto opt-in (denoise + CLAHE + adaptive threshold + text suppression)
+- Hardening contorni opt-in (filtro degeneri, smoothing controllato, rimozione artefatti piccoli)
 
 ### georeferencing/georeferencer.py
-Classe `Georeferencer` per la conversione coordinate pixel → geo.
+Classe `Georeferencer` per la conversione coordinate pixel → geo:
+- fallback bounds lineare (default)
+- affine con 3+ GCP
+- omografia con 4+ GCP
+- `cv_auto` opt-in con raster di riferimento georeferenziato (ORB/AKAZE/SIFT + RANSAC)
+- metriche di qualità/residuo per guided validation
+
+### Compatibilità e fallback
+- Percorso legacy invariato di default.
+- `cv_auto` è disponibile solo opt-in dal frontend/API.
+- Se la confidence CV è insufficiente, ritorno automatico a bounds con metadata di fallback.
 
 ### georeferencing/aligner.py
 Classe `TerritoryAligner` per allineare le regioni a confini reali.
@@ -113,13 +126,16 @@ Funzioni UI: toast notifications, loading overlay, step navigation.
 
 ### editor.js
 Editor SVG per modifica poligoni: selezione, modifica vertici, spostamento, scala.
+Le operazioni mutate lato UI vengono sincronizzate al backend (`/api/update-region`, `/api/add-region`)
+per mantenere coerenza con l'export.
 
 ### georef.js
 Georeferenziazione interattiva con Leaflet.js.
-Nota: l'export supporta bounds assiali; la rotazione va riportata a 0° prima di applicare.
+Nota backend: l'export supporta sia bounds assiali che georeferenziazione GCP (affine/omografia) con fallback automatico al metodo bounds.
 
 ### export.js
-Generazione e download GeoJSON.
+Generazione e download GeoJSON con georeferenziazione opt-in (`affine`, `homography`, `cv_auto`)
+e fallback esplicito su modalità legacy quando necessario.
 
 ### drawing.js
 Disegno manuale di poligoni e punti.
@@ -157,4 +173,4 @@ Per aggiungere una nuova funzionalità:
 - Il JavaScript usa ES6 modules (`type="module"`)
 - Il CSS usa variabili CSS per theming consistente
 - Le API seguono convenzioni REST
-- La sessione è gestita in memoria (per demo/sviluppo)
+- La sessione è gestita in memoria (per demo/sviluppo) con TTL e cleanup automatico

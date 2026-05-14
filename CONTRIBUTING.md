@@ -26,6 +26,7 @@ Thank you for your interest in contributing! This project is open-source and stu
 - Follow Python best practices (PEP 8).
 - Add tests for new features.
 - Update documentation if needed.
+- Keep new behavior backward-compatible by default and expose opt-in switches for risky changes.
 
 ### 4. Pull Requests
 
@@ -60,8 +61,8 @@ If `gh` is not authenticated, run:
 
 1. Clone the repo: `git clone https://github.com/ironn0/Map_to_Geojson-Converter.git`
 2. Install dependencies: `pip install -r requirements-dev.txt`
-3. Run quality checks: `python scripts/verify.py`
-4. Test your changes locally.
+3. Run quality + tests + benchmark checks: `python scripts/verify.py`
+5. Test your changes locally.
 
 ## Code Style
 

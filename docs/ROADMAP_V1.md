@@ -69,16 +69,22 @@ Focus:
 - GeoJSON robustness improvements (shape validity/simplification policies).
 - Session scalability safeguards (TTL, memory limits, cleanup strategy).
 - Minimal observability for operational debugging.
+- Benchmark gate with representative difficult-map fixtures and measurable KPIs.
+- Semi-automatic CV georeferencing mode (`cv_auto`) with confidence metrics and safe fallback.
 
 Acceptance criteria:
 - Exported polygons pass GeoJSON validity checks for supported workflows.
 - Session cleanup strategy documented and tested.
 - Structured error logs available for API failures.
+- Legacy georeferencing path remains stable and default.
+- `cv_auto` available as opt-in with explicit fallback reason when confidence is low.
 
 KPIs:
 - Conversion success rate >= 95% on curated benchmark maps.
 - Median conversion time < 30 seconds for standard map inputs.
 - No unresolved P1 bugs at release cut.
+- Release benchmark command (`python benchmarks/run_benchmark.py`) returns PASS.
+- Difficult-map benchmark shows measurable georeferencing gain with `cv_auto` vs legacy bounds.
 
 ## Release checklist for v1.0.0
 - [ ] `python scripts/verify.py` passes locally.

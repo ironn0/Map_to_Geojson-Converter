@@ -48,10 +48,6 @@ export function setTool(tool) {
         }
     }
     
-    // If selecting edit tool, require a shape to be selected
-    if (tool === 'edit' && state.selectedRegionId !== null) {
-        startEditRegion(state.selectedRegionId);
-    }
 }
 
 /**
@@ -223,9 +219,7 @@ export function simplifyShape(renderPolygons, updateRegionsList) {
     }
     
     region.points = simplified;
-    if (renderPolygons) renderPolygons();
-    if (updateRegionsList) updateRegionsList();
-    toast(`Semplificato a ${simplified.length} vertici`, 'success');
+    void persistRegionUpdate(state.selectedRegionId, renderPolygons, updateRegionsList, `Semplificato a ${simplified.length} vertici`);
 }
 
 /**
@@ -291,9 +285,7 @@ export function smoothShape(renderPolygons, updateRegionsList) {
     });
     
     region.points = smoothed;
-    if (renderPolygons) renderPolygons();
-    if (updateRegionsList) updateRegionsList();
-    toast('Forma levigata', 'success');
+    void persistRegionUpdate(state.selectedRegionId, renderPolygons, updateRegionsList, 'Forma levigata');
 }
 
 /**
@@ -301,7 +293,7 @@ export function smoothShape(renderPolygons, updateRegionsList) {
  * @param {Function} renderPolygons - Callback per rendering
  * @param {Function} updateRegionsList - Callback per aggiornamento lista
  */
-export function duplicateShape(renderPolygons, updateRegionsList) {
+export async function duplicateShape(renderPolygons, updateRegionsList) {
     if (state.selectedRegionId === null) {
         toast('Seleziona prima una forma', 'warning');
         return;
@@ -310,17 +302,23 @@ export function duplicateShape(renderPolygons, updateRegionsList) {
     const original = state.regions[state.selectedRegionId];
     const offset = 20;
     
-    const duplicate = {
-        ...original,
-        name: original.name + ' (copia)',
-        points: original.points.map(p => [p[0] + offset, p[1] + offset])
-    };
-    
-    state.regions.push(duplicate);
-    state.selectedRegionId = state.regions.length - 1;
-    if (renderPolygons) renderPolygons();
-    if (updateRegionsList) updateRegionsList();
-    toast('Forma duplicata', 'success');
+    const duplicatePoints = original.points.map(p => [p[0] + offset, p[1] + offset]);
+
+    try {
+        const data = await api.addRegion({
+            session_id: state.sessionId,
+            points: duplicatePoints,
+            name: `${original.name} (copia)`,
+            color: original.color,
+        });
+        state.regions = data.regions;
+        state.selectedRegionId = state.regions.length - 1;
+        if (renderPolygons) renderPolygons();
+        if (updateRegionsList) updateRegionsList();
+        toast('Forma duplicata', 'success');
+    } catch (e) {
+        toast('Errore duplicazione: ' + e.message, 'error');
+    }
 }
 
 /**
@@ -344,7 +342,7 @@ export function deleteSelectedShape(deleteRegionCallback) {
  * @param {MouseEvent} startEvent - Evento mouse
  * @param {Function} renderPolygons - Callback per rendering
  */
-export function startMoveShape(regionIdx, startEvent, renderPolygons) {
+export function startMoveShape(regionIdx, startEvent, renderPolygons, updateRegionsList) {
     const region = state.regions[regionIdx];
     const startX = startEvent.clientX;
     const startY = startEvent.clientY;
@@ -364,7 +362,7 @@ export function startMoveShape(regionIdx, startEvent, renderPolygons) {
     const onUp = () => {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
-        toast('Forma spostata', 'success');
+        void persistRegionUpdate(regionIdx, renderPolygons, updateRegionsList, 'Forma spostata');
     };
     
     document.addEventListener('mousemove', onMove);
@@ -377,7 +375,7 @@ export function startMoveShape(regionIdx, startEvent, renderPolygons) {
  * @param {MouseEvent} startEvent - Evento mouse
  * @param {Function} renderPolygons - Callback per rendering
  */
-export function startScaleShape(regionIdx, startEvent, renderPolygons) {
+export function startScaleShape(regionIdx, startEvent, renderPolygons, updateRegionsList) {
     const region = state.regions[regionIdx];
     const pts = region.points;
     
@@ -402,9 +400,32 @@ export function startScaleShape(regionIdx, startEvent, renderPolygons) {
     const onUp = () => {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
-        toast('Forma ridimensionata', 'success');
+        void persistRegionUpdate(regionIdx, renderPolygons, updateRegionsList, 'Forma ridimensionata');
     };
     
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+}
+
+async function persistRegionUpdate(regionIdx, renderPolygons, updateRegionsList, successMessage) {
+    if (regionIdx === null || regionIdx === undefined) return;
+    if (!state.sessionId) return;
+    const region = state.regions[regionIdx];
+    if (!region?.points || region.points.length < 3) {
+        toast('Forma non valida: servono almeno 3 punti', 'error');
+        return;
+    }
+    try {
+        const data = await api.updateRegion({
+            session_id: state.sessionId,
+            region_id: regionIdx,
+            points: region.points,
+        });
+        state.regions = data.regions;
+        if (renderPolygons) renderPolygons();
+        if (updateRegionsList) updateRegionsList();
+        if (successMessage) toast(successMessage, 'success');
+    } catch (e) {
+        toast('Errore aggiornamento forma: ' + e.message, 'error');
+    }
 }

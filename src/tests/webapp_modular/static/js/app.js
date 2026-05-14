@@ -23,7 +23,9 @@ import {
 } from './editor.js';
 import {
     getBounds, handlePresetChange, openGeorefModal, closeGeorefModal,
-    updateGeorefOverlay, applyGeoref, handleReferenceUpload, clearReference, alignToTerritories
+    updateGeorefOverlay, applyGeoref, handleReferenceUpload, clearReference, alignToTerritories,
+    handleCvReferenceImageUpload, syncCvReferenceBoundsFromCurrent, updateCvAutoUiState, resetCvAutoUiState,
+    clearCvReference, resetGeorefPosition, fitGeorefView, applyReferenceGeojsonBounds, resetGeorefRotation
 } from './georef.js';
 import { generateGeoJSON, exportAndDownload, previewGeoJSON, copyGeoJSON, downloadGeoJSON } from './export.js';
 import { startDrawPolygon, startDrawPoint, handleDrawClick, finishDrawing, cancelDrawing } from './drawing.js';
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupKeyboardShortcuts();
     
     state.presets = await api.loadPresets();
+    updateCvAutoUiState();
     updateStep(1, state);
     setTool('select');
 });
@@ -86,6 +89,10 @@ function setupEventListeners() {
     el.nColors.addEventListener('input', e => el.nColorsValue.textContent = e.target.value);
     el.minArea.addEventListener('input', e => el.minAreaValue.textContent = e.target.value);
     el.snapStrength.addEventListener('input', e => el.snapStrengthValue.textContent = Math.round(e.target.value * 100) + '%');
+    el.cvConfidenceThreshold?.addEventListener('input', e => {
+        el.cvConfidenceThresholdValue.textContent = parseFloat(e.target.value).toFixed(2);
+    });
+    el.cvAutoEnabled?.addEventListener('change', updateCvAutoUiState);
     
     // Actions
     el.segmentBtn.addEventListener('click', runSegmentation);
@@ -176,13 +183,21 @@ function setupEventListeners() {
     el.georefModalClose.addEventListener('click', closeGeorefModal);
     el.georefCancel.addEventListener('click', closeGeorefModal);
     el.georefApply.addEventListener('click', applyGeoref);
-    el.georefRotation.addEventListener('input', updateGeorefOverlay);
+    el.georefRotation?.addEventListener('input', updateGeorefOverlay);
     el.georefOpacity.addEventListener('input', updateGeorefOverlay);
+    el.georefReset?.addEventListener('click', resetGeorefPosition);
+    el.georefResetRotation?.addEventListener('click', resetGeorefRotation);
+    el.georefFit?.addEventListener('click', fitGeorefView);
     
     // Alignment controls
     el.loadReferenceBtn.addEventListener('click', () => el.referenceFile.click());
     el.referenceFile.addEventListener('change', handleReferenceUpload);
     el.clearReferenceBtn.addEventListener('click', clearReference);
+    el.referenceBoundsBtn?.addEventListener('click', applyReferenceGeojsonBounds);
+    el.loadCvReferenceBtn?.addEventListener('click', () => el.cvReferenceFile.click());
+    el.cvReferenceFile?.addEventListener('change', handleCvReferenceImageUpload);
+    el.clearCvReferenceBtn?.addEventListener('click', () => clearCvReference());
+    el.cvRefUseCurrentBoundsBtn?.addEventListener('click', syncCvReferenceBoundsFromCurrent);
     el.alignBtn.addEventListener('click', () => alignToTerritories(displayImage, updateRegionsList));
     
     // Window resize
@@ -284,6 +299,8 @@ async function clearSession() {
     
     resetState();
     exitEditMode(renderPolygons);
+    resetCvAutoUiState();
+    clearReference(true);
     
     el.canvas.getContext('2d').clearRect(0, 0, el.canvas.width, el.canvas.height);
     el.polygonEditor.innerHTML = '';
@@ -422,12 +439,12 @@ function renderPolygons() {
                 e.stopPropagation();
                 e.preventDefault();
                 selectRegion(idx, renderPolygons);
-                startMoveShape(idx, e, renderPolygons);
+                startMoveShape(idx, e, renderPolygons, updateRegionsList);
             } else if (state.currentTool === 'scale') {
                 e.stopPropagation();
                 e.preventDefault();
                 selectRegion(idx, renderPolygons);
-                startScaleShape(idx, e, renderPolygons);
+                startScaleShape(idx, e, renderPolygons, updateRegionsList);
             } else if (state.currentTool === 'edit') {
                 e.stopPropagation();
                 startEditRegion(idx, renderPolygons);

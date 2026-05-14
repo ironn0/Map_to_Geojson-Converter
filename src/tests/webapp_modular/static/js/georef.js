@@ -11,6 +11,20 @@ import { toast, updateStep, showLoading, hideLoading } from './ui.js';
 import * as api from './api.js';
 
 let cornerMarkers = [];
+const CV_QUALITY_CLASSES = ['cv-quality-neutral', 'cv-quality-success', 'cv-quality-warning'];
+
+function setCvQualityStatus(text, tone = 'neutral') {
+    if (!el.cvQualityStatus) return;
+    el.cvQualityStatus.classList.remove(...CV_QUALITY_CLASSES);
+    if (tone === 'success') {
+        el.cvQualityStatus.classList.add('cv-quality-success');
+    } else if (tone === 'warning') {
+        el.cvQualityStatus.classList.add('cv-quality-warning');
+    } else {
+        el.cvQualityStatus.classList.add('cv-quality-neutral');
+    }
+    el.cvQualityStatus.textContent = text;
+}
 
 /**
  * Ottiene i bounds correnti
@@ -38,6 +52,120 @@ export function validateBounds(bounds) {
     if (bounds.north > 90 || bounds.south < -90) return false;
     if (bounds.east > 180 || bounds.west < -180) return false;
     return true;
+}
+
+function getCvReferenceBounds() {
+    return {
+        north: parseFloat(el.cvRefBoundNorth.value),
+        south: parseFloat(el.cvRefBoundSouth.value),
+        east: parseFloat(el.cvRefBoundEast.value),
+        west: parseFloat(el.cvRefBoundWest.value)
+    };
+}
+
+/**
+ * Restituisce payload georeferencing opt-in.
+ * Torna null per comportamento legacy invariato.
+ */
+export function getGeoreferencingPayload() {
+    if (!el.cvAutoEnabled?.checked) {
+        return null;
+    }
+
+    if (!state.cvReferenceImageBase64) {
+        toast('Carica un raster di riferimento per usare cv_auto', 'warning');
+        return null;
+    }
+
+    const cvBounds = getCvReferenceBounds();
+    if (!validateBounds(cvBounds)) {
+        toast('Bounds del raster di riferimento non validi', 'error');
+        return null;
+    }
+
+    return {
+        mode: 'cv_auto',
+        allow_fallback: true,
+        min_matches: 30,
+        inlier_threshold: 3.0,
+        confidence_threshold: parseFloat(el.cvConfidenceThreshold.value || '0.35'),
+        cv_reference_image_base64: state.cvReferenceImageBase64,
+        cv_reference_bounds: cvBounds
+    };
+}
+
+export function isCvAutoEnabled() {
+    return !!el.cvAutoEnabled?.checked;
+}
+
+export function validateCvAutoConfiguration() {
+    if (!isCvAutoEnabled()) return true;
+    if (!state.cvReferenceImageBase64) {
+        toast('cv_auto attivo: carica un raster di riferimento', 'warning');
+        return false;
+    }
+    const cvBounds = getCvReferenceBounds();
+    if (!validateBounds(cvBounds)) {
+        toast('cv_auto attivo: bounds del raster di riferimento non validi', 'error');
+        return false;
+    }
+    return true;
+}
+
+export function updateCvAutoUiState() {
+    const enabled = isCvAutoEnabled();
+    if (el.cvAutoControls) {
+        el.cvAutoControls.classList.toggle('hidden', !enabled);
+    }
+    const inputs = [
+        el.loadCvReferenceBtn,
+        el.cvRefBoundNorth,
+        el.cvRefBoundSouth,
+        el.cvRefBoundEast,
+        el.cvRefBoundWest,
+        el.cvRefUseCurrentBoundsBtn,
+        el.cvConfidenceThreshold,
+    ];
+    inputs.forEach((node) => {
+        if (node) node.disabled = !enabled;
+    });
+
+    if (!enabled) {
+        setCvQualityStatus('Qualità registrazione CV: non attiva (legacy default)', 'neutral');
+    } else {
+        setCvQualityStatus('Qualità registrazione CV: in attesa di esecuzione', 'neutral');
+    }
+}
+
+export function resetCvAutoUiState() {
+    if (el.cvAutoEnabled) el.cvAutoEnabled.checked = false;
+    if (el.cvReferenceInfo) el.cvReferenceInfo.classList.add('hidden');
+    if (el.cvReferenceName) el.cvReferenceName.textContent = '';
+    if (el.cvReferenceFile) el.cvReferenceFile.value = '';
+    if (el.cvConfidenceThreshold) el.cvConfidenceThreshold.value = '0.35';
+    if (el.cvConfidenceThresholdValue) el.cvConfidenceThresholdValue.textContent = '0.35';
+    setCvQualityStatus('Qualità registrazione CV: n/d', 'neutral');
+    updateCvAutoUiState();
+}
+
+function updateCvQualityFromMetadata(meta, attemptedCvAuto) {
+    if (!attemptedCvAuto || !meta) return;
+    if (meta.fallback_from === 'cv_auto') {
+        setCvQualityStatus(
+            `Qualità registrazione CV: fallback (${meta.fallback_reason || 'motivo non disponibile'})`,
+            'warning',
+        );
+        return;
+    }
+    if (meta.mode === 'cv_auto') {
+        const conf = typeof meta.cv_confidence === 'number' ? meta.cv_confidence.toFixed(3) : String(meta.cv_confidence);
+        const inlier = typeof meta.cv_inlier_ratio === 'number' ? meta.cv_inlier_ratio.toFixed(3) : String(meta.cv_inlier_ratio);
+        setCvQualityStatus(`Qualità registrazione CV: confidence ${conf}, inlier ratio ${inlier}`, 'success');
+    }
+}
+
+export function applyCvQualityFromMetadata(meta, attemptedCvAuto) {
+    updateCvQualityFromMetadata(meta, attemptedCvAuto);
 }
 
 /**
@@ -77,6 +205,9 @@ export function closeGeorefModal() {
         state.georefMap = null; 
         state.imageOverlay = null; 
     }
+    if (el.georefMap) {
+        el.georefMap.innerHTML = '';
+    }
 }
 
 /**
@@ -92,11 +223,19 @@ function initGeorefMap() {
     }).addTo(state.georefMap);
     
     const bounds = L.latLngBounds([b.south, b.west], [b.north, b.east]);
+    state.georefInitialBounds = L.latLngBounds([b.south, b.west], [b.north, b.east]);
     state.imageOverlay = L.imageOverlay('data:image/png;base64,' + state.imageBase64, bounds, { 
         opacity: 0.7, 
         interactive: true 
     }).addTo(state.georefMap);
     state.overlayBounds = bounds;
+    state.georefDirty = false;
+    if (el.georefRotation) {
+        el.georefRotation.value = String(state.georefRotationDegrees || 0);
+    }
+    if (el.georefOpacity) {
+        el.georefOpacity.value = String(state.imageOverlay.options.opacity ?? 0.7);
+    }
     
     createCornerMarkers();
     
@@ -122,6 +261,7 @@ function initGeorefMap() {
                 [startBounds.getNorth() + dLat, startBounds.getEast() + dLng]
             );
             state.imageOverlay.setBounds(state.overlayBounds);
+            state.georefDirty = true;
             updateCornerMarkers();
         });
         
@@ -129,6 +269,7 @@ function initGeorefMap() {
     }
     
     state.georefMap.fitBounds(bounds.pad(0.1));
+    updateGeorefOverlay();
 }
 
 /**
@@ -181,10 +322,41 @@ function handleCornerDrag(pos, latlng) {
         case 'se': south = latlng.lat; east = latlng.lng; break;
         case 'sw': south = latlng.lat; west = latlng.lng; break;
     }
-    
+
+    // Mantieni proporzioni immagine per evitare deformazioni durante lo scaling.
+    const ratio = state.imageWidth > 0 && state.imageHeight > 0 ? state.imageWidth / state.imageHeight : 1;
+    let width = east - west;
+    let height = north - south;
+    if (width <= 0 || height <= 0) return;
+    if (width / height > ratio) {
+        width = height * ratio;
+    } else {
+        height = width / ratio;
+    }
+
+    switch (pos) {
+        case 'nw':
+            west = b.getEast() - width;
+            north = b.getSouth() + height;
+            break;
+        case 'ne':
+            east = b.getWest() + width;
+            north = b.getSouth() + height;
+            break;
+        case 'se':
+            east = b.getWest() + width;
+            south = b.getNorth() - height;
+            break;
+        case 'sw':
+            west = b.getEast() - width;
+            south = b.getNorth() - height;
+            break;
+    }
+
     if (north > south + 0.01 && east > west + 0.01) {
         state.overlayBounds = L.latLngBounds([south, west], [north, east]);
         state.imageOverlay.setBounds(state.overlayBounds);
+        state.georefDirty = true;
         
         cornerMarkers.forEach(m => {
             if (m.cornerPos !== pos) {
@@ -215,17 +387,18 @@ export function updateGeorefOverlay() {
     if (!state.imageOverlay || !state.overlayBounds) return;
     
     const opacity = parseFloat(el.georefOpacity.value);
-    const rotation = parseFloat(el.georefRotation.value);
+    const rotation = parseFloat(el.georefRotation.value || '0');
     
     el.georefOpacityValue.textContent = Math.round(opacity * 100) + '%';
-    el.georefRotationValue.textContent = rotation + '°';
+    el.georefRotationValue.textContent = `${Math.round(rotation)}°`;
     
     state.imageOverlay.setOpacity(opacity);
-    
+    state.georefRotationDegrees = rotation;
+
     const img = state.imageOverlay.getElement();
-    if (img) { 
-        img.style.transformOrigin = 'center'; 
-        img.style.transform = `rotate(${rotation}deg)`; 
+    if (img) {
+        img.style.transformOrigin = 'center center';
+        img.style.transform = `rotate(${rotation}deg)`;
     }
 }
 
@@ -238,24 +411,131 @@ export function applyGeoref() {
         return; 
     }
 
-    const rotation = parseFloat(el.georefRotation.value);
-    if (rotation !== 0) {
-        toast('Imposta rotazione a 0° prima di applicare: export supporta solo bounds assiali', 'warning');
+    const overlayFromMap = state.imageOverlay?.getBounds?.();
+    const b = overlayFromMap || state.overlayBounds;
+    state.overlayBounds = b;
+    if (!validateBounds({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() })) {
+        toast('Bounds risultanti non validi. Reimposta e riprova.', 'error');
         return;
     }
-    
-    const b = state.imageOverlay.getBounds();
+
+    if (!state.georefDirty) {
+        toast('Nessuna modifica rilevata: bounds invariati.', 'info');
+    }
+
     el.boundNorth.value = b.getNorth().toFixed(4);
     el.boundSouth.value = b.getSouth().toFixed(4);
     el.boundEast.value = b.getEast().toFixed(4);
     el.boundWest.value = b.getWest().toFixed(4);
     el.presetSelect.value = 'custom';
+
+    const latSpan = b.getNorth() - b.getSouth();
+    if (b.getNorth() > 75 || b.getSouth() < -75 || latSpan > 120) {
+        toast(
+            'Attenzione: bounds molto estesi o vicini ai poli possono deformare la scala su planisfero.',
+            'warning',
+        );
+    }
     
+    if (Math.abs(state.georefRotationDegrees) > 0.5) {
+        toast(
+            'Rotazione applicata solo come guida visiva: i bounds export restano assiali.',
+            'warning',
+        );
+    }
+
     closeGeorefModal();
     toast('Coordinate geografiche applicate!', 'success');
     
     // Passa automaticamente allo step Export
     updateStep(4, state);
+}
+
+export function resetGeorefPosition() {
+    if (!state.imageOverlay || !state.georefInitialBounds) return;
+    state.overlayBounds = L.latLngBounds(
+        state.georefInitialBounds.getSouthWest(),
+        state.georefInitialBounds.getNorthEast(),
+    );
+    state.imageOverlay.setBounds(state.overlayBounds);
+    state.georefDirty = true;
+    updateCornerMarkers();
+    toast('Posizione ripristinata ai bounds iniziali', 'info');
+}
+
+export function fitGeorefView() {
+    if (!state.georefMap || !state.overlayBounds) return;
+    state.georefMap.fitBounds(state.overlayBounds.pad(0.12));
+}
+
+export function resetGeorefRotation() {
+    if (!el.georefRotation) return;
+    el.georefRotation.value = '0';
+    state.georefRotationDegrees = 0;
+    updateGeorefOverlay();
+    toast('Rotazione azzerata', 'info');
+}
+
+function _iterCoords(geometry, push) {
+    if (!geometry || !geometry.type || !geometry.coordinates) return;
+    if (geometry.type === 'Point') {
+        push(geometry.coordinates);
+        return;
+    }
+    if (geometry.type === 'MultiPoint' || geometry.type === 'LineString') {
+        geometry.coordinates.forEach(push);
+        return;
+    }
+    if (geometry.type === 'MultiLineString' || geometry.type === 'Polygon') {
+        geometry.coordinates.forEach((ring) => ring.forEach(push));
+        return;
+    }
+    if (geometry.type === 'MultiPolygon') {
+        geometry.coordinates.forEach((poly) => poly.forEach((ring) => ring.forEach(push)));
+    }
+}
+
+export function applyReferenceGeojsonBounds() {
+    if (!state.referenceGeojson) {
+        toast('Carica prima un GeoJSON di riferimento', 'warning');
+        return;
+    }
+    let minLon = Infinity;
+    let minLat = Infinity;
+    let maxLon = -Infinity;
+    let maxLat = -Infinity;
+    const collect = (coord) => {
+        if (!Array.isArray(coord) || coord.length < 2) return;
+        const lon = Number(coord[0]);
+        const lat = Number(coord[1]);
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+        minLon = Math.min(minLon, lon);
+        maxLon = Math.max(maxLon, lon);
+        minLat = Math.min(minLat, lat);
+        maxLat = Math.max(maxLat, lat);
+    };
+
+    const gj = state.referenceGeojson;
+    if (gj.type === 'FeatureCollection') {
+        (gj.features || []).forEach((f) => _iterCoords(f.geometry, collect));
+    } else if (gj.type === 'Feature') {
+        _iterCoords(gj.geometry, collect);
+    } else {
+        _iterCoords(gj, collect);
+    }
+
+    const bounds = { north: maxLat, south: minLat, east: maxLon, west: minLon };
+    if (!validateBounds(bounds)) {
+        toast('Impossibile derivare bounds validi dal riferimento', 'error');
+        return;
+    }
+
+    el.boundNorth.value = bounds.north.toFixed(4);
+    el.boundSouth.value = bounds.south.toFixed(4);
+    el.boundEast.value = bounds.east.toFixed(4);
+    el.boundWest.value = bounds.west.toFixed(4);
+    el.presetSelect.value = 'custom';
+    toast('Bounds impostati dal GeoJSON di riferimento', 'success');
 }
 
 /**
@@ -291,11 +571,72 @@ export async function handleReferenceUpload(e) {
 /**
  * Rimuove il riferimento caricato
  */
-export function clearReference() {
+export function clearReference(silent = false) {
     state.referenceGeojson = null;
     state.referenceName = null;
     el.referenceInfo.classList.add('hidden');
-    toast('Riferimento rimosso', 'info');
+    if (!silent) {
+        toast('Riferimento rimosso', 'info');
+    }
+}
+
+/**
+ * Gestisce upload raster riferimento per cv_auto.
+ * @param {Event} e
+ */
+export async function handleCvReferenceImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowed = ['image/png', 'image/jpeg', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+        toast('Formato non supportato. Usa PNG/JPEG/WebP.', 'error');
+        e.target.value = '';
+        return;
+    }
+
+    try {
+        const b64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Errore lettura file'));
+            reader.readAsDataURL(file);
+        });
+
+        state.cvReferenceImageBase64 = b64;
+        state.cvReferenceImageName = file.name;
+        el.cvReferenceInfo.classList.remove('hidden');
+        el.cvReferenceName.textContent = file.name;
+        setCvQualityStatus('Qualità registrazione CV: riferimento caricato, pronto', 'neutral');
+        toast('Raster riferimento CV caricato', 'success');
+    } catch (err) {
+        toast('Errore caricamento raster: ' + err.message, 'error');
+    } finally {
+        e.target.value = '';
+    }
+}
+
+export function clearCvReference(silent = false) {
+    state.cvReferenceImageBase64 = null;
+    state.cvReferenceImageName = null;
+    if (el.cvReferenceInfo) el.cvReferenceInfo.classList.add('hidden');
+    if (el.cvReferenceName) el.cvReferenceName.textContent = '';
+    if (el.cvReferenceFile) el.cvReferenceFile.value = '';
+    setCvQualityStatus('Qualità registrazione CV: riferimento rimosso', 'neutral');
+    if (!silent) {
+        toast('Raster riferimento CV rimosso', 'info');
+    }
+}
+
+/**
+ * Sincronizza i bounds CV con i bounds correnti.
+ */
+export function syncCvReferenceBoundsFromCurrent() {
+    el.cvRefBoundNorth.value = el.boundNorth.value;
+    el.cvRefBoundSouth.value = el.boundSouth.value;
+    el.cvRefBoundEast.value = el.boundEast.value;
+    el.cvRefBoundWest.value = el.boundWest.value;
+    toast('Bounds riferimento CV sincronizzati con i bounds correnti', 'info');
 }
 
 /**
@@ -323,6 +664,14 @@ export async function alignToTerritories(displayImage, updateRegionsList) {
             bounds: bounds,
             snap_strength: parseFloat(el.snapStrength.value)
         };
+
+        if (!validateCvAutoConfiguration()) {
+            return;
+        }
+        const georeferencing = getGeoreferencingPayload();
+        if (georeferencing) {
+            requestBody.georeferencing = georeferencing;
+        }
         
         if (state.referenceGeojson) {
             requestBody.reference_geojson = state.referenceGeojson;
@@ -340,6 +689,19 @@ export async function alignToTerritories(displayImage, updateRegionsList) {
             
             if (data.aligned_geojson) {
                 state.geojsonData = data.aligned_geojson;
+                const georefMeta = data.aligned_geojson?.properties?.georeferencing;
+                if (georeferencing && georefMeta?.fallback_from === 'cv_auto') {
+                    toast(
+                        `cv_auto fallback su legacy (${georefMeta.fallback_reason || 'motivo non disponibile'})`,
+                        'warning',
+                    );
+                } else if (georeferencing && georefMeta?.mode === 'cv_auto') {
+                    toast(`cv_auto applicato (confidence ${georefMeta.cv_confidence})`, 'success');
+                }
+                if (georefMeta?.projection_warning) {
+                    toast(georefMeta.projection_warning, 'warning');
+                }
+                updateCvQualityFromMetadata(georefMeta, Boolean(georeferencing));
             }
             
             toast(data.message || 'Allineamento completato!', 'success');

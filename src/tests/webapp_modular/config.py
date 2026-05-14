@@ -5,8 +5,8 @@ Configurazione centralizzata dell'applicazione
 Author: Map to GeoJSON Converter Project
 """
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 # ==================== App Settings ====================
 
@@ -26,12 +26,36 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_CONTENT_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
 THUMBNAIL_MAX_DIM = 1200
+SESSION_TTL_SECONDS = 60 * 60 * 4  # 4h
 
 # ==================== Segmentation Defaults ====================
 
 DEFAULT_N_COLORS = 40
 DEFAULT_MIN_AREA = 500
 MIN_REGION_AREA = 100
+
+# Opt-in robust segmentation defaults
+ROBUST_SEGMENTATION_DEFAULTS = {
+    "denoise_strength": 10.0,
+    "clahe_clip_limit": 2.5,
+    "adaptive_block_size": 41,
+    "adaptive_c": 2.0,
+    "text_suppression": True,
+    "morphology_kernel": 5,
+    # Contour hardening settings (safe defaults keep current behavior)
+    "contour_min_points": 4,
+    "contour_solidity_min": 0.3,
+    "contour_smoothing_epsilon_scale": 0.002,
+    "artifact_min_component_area": 0,
+}
+
+# Optional geometry sanitization defaults (disabled for backward compatibility)
+GEOMETRY_SANITIZE_DEFAULTS = {
+    "enabled": False,
+    "min_polygon_area": 0.0,
+    "simplify_tolerance": 0.0,
+    "keep_multipolygons": True,
+}
 
 # ==================== Geo Presets ====================
 

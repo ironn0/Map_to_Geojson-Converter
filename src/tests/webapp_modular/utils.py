@@ -5,10 +5,11 @@ Funzioni di utilità comuni
 Author: Map to GeoJSON Converter Project
 """
 
-import cv2
 import base64
-import numpy as np
 from typing import Dict
+
+import cv2
+import numpy as np
 from models import ExtractedRegion
 
 
