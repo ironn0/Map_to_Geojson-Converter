@@ -76,6 +76,7 @@ class ExportRequest(BaseModel):
     region_names: Optional[Dict[int, str]] = None
     georeferencing: Optional["GeoreferencingRequest"] = None
     geometry_sanitize: Optional["GeometrySanitizeSettings"] = None
+    include_detected_circle: bool = True
 
 
 class UpdateRegionRequest(BaseModel):
@@ -123,6 +124,21 @@ class AlignRequest(BaseModel):
     reference_geojson: Optional[Dict] = None
     snap_strength: float = 0.5
     georeferencing: Optional["GeoreferencingRequest"] = None
+
+
+class CircleDetectRequest(BaseModel):
+    """Richiesta di rilevamento + georeferenziazione cerchio."""
+
+    session_id: str
+    bounds: GeoBounds
+    georeferencing: Optional["GeoreferencingRequest"] = None
+    strict_center_target_m: float = 5.0
+
+    @model_validator(mode="after")
+    def validate_strict_target(self):
+        if self.strict_center_target_m <= 0:
+            raise ValueError("strict_center_target_m deve essere > 0")
+        return self
 
 
 class GroundControlPoint(BaseModel):
@@ -252,6 +268,14 @@ class SegmentResponse(BaseModel):
     num_regions: int
     regions: List[Dict]
     visualization: str
+
+
+class CircleDetectResponse(BaseModel):
+    """Risposta rilevamento cerchio."""
+
+    success: bool
+    circle: Dict
+    georeferencing: Dict
 
 
 class RegionDict(BaseModel):

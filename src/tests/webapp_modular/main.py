@@ -25,7 +25,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from routes import alignment_router, export_router, segmentation_router, upload_router
+from routes import (
+    alignment_router,
+    circle_router,
+    export_router,
+    segmentation_router,
+    upload_router,
+)
 from session_manager import delete_session
 
 # ==================== App Initialization ====================
@@ -52,6 +58,7 @@ app.include_router(upload_router)
 app.include_router(segmentation_router)
 app.include_router(export_router)
 app.include_router(alignment_router)
+app.include_router(circle_router)
 
 # ==================== Static Pages ====================
 

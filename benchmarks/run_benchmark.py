@@ -23,7 +23,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 WEBAPP_MODULAR = REPO_ROOT / "src" / "tests" / "webapp_modular"
 sys.path.insert(0, str(WEBAPP_MODULAR))
 
-from georeferencing import Georeferencer, sanitize_polygon_geometry  # noqa: E402
+from georeferencing import (  # noqa: E402
+    Georeferencer,
+    detect_and_georeference_circle,
+    sanitize_polygon_geometry,
+)
 from segmentation import MapSegmenter  # noqa: E402
 
 
@@ -36,7 +40,9 @@ def _warp_points(points: List[List[float]], matrix: np.ndarray) -> np.ndarray:
     return cv2.transform(pts, matrix).reshape(-1, 2)
 
 
-def _build_fixture_image(case: Dict) -> Tuple[np.ndarray, List[Polygon], np.ndarray, List[Polygon]]:
+def _build_fixture_image(
+    case: Dict,
+) -> Tuple[np.ndarray, List[Polygon], np.ndarray, List[Polygon], Dict | None]:
     image_cfg = case["image"]
     width = int(image_cfg["width"])
     height = int(image_cfg["height"])
@@ -75,10 +81,40 @@ def _build_fixture_image(case: Dict) -> Tuple[np.ndarray, List[Polygon], np.ndar
                 cv2.LINE_AA,
             )
 
+    circle_gt = None
+    if image_cfg.get("circle"):
+        c = image_cfg["circle"]
+        ref_center = np.array([[c["center"]]], dtype=np.float32)
+        warped_center = _warp_points([c["center"]], rotate)[0]
+        radius_px = float(c["radius_px"])
+        color = tuple(int(v) for v in c.get("color_bgr", [40, 40, 40]))
+        thickness = int(c.get("thickness", 2))
+        cv2.circle(
+            reference_canvas,
+            (int(ref_center[0, 0, 0]), int(ref_center[0, 0, 1])),
+            int(radius_px),
+            color,
+            thickness,
+            lineType=cv2.LINE_AA,
+        )
+        cv2.circle(
+            canvas,
+            (int(warped_center[0]), int(warped_center[1])),
+            int(radius_px),
+            color,
+            thickness,
+            lineType=cv2.LINE_AA,
+        )
+        circle_gt = {
+            "reference_center_px": (float(c["center"][0]), float(c["center"][1])),
+            "warped_center_px": (float(warped_center[0]), float(warped_center[1])),
+            "radius_px": radius_px,
+        }
+
     noise_sigma = float(image_cfg["noise_sigma"])
     noise = np.random.default_rng(42).normal(0, noise_sigma, canvas.shape).astype(np.int16)
     noisy = np.clip(canvas.astype(np.int16) + noise, 0, 255).astype(np.uint8)
-    return noisy, gt_polygons, reference_canvas, ref_polygons
+    return noisy, gt_polygons, reference_canvas, ref_polygons, circle_gt
 
 
 def _polygon_iou(poly_a: Polygon, poly_b: Polygon) -> float:
@@ -141,7 +177,7 @@ def _distance_geo_meters(lon_a: float, lat_a: float, lon_b: float, lat_b: float)
 
 
 def run_case(case: Dict, thresholds: Dict) -> Dict:
-    image, gt_polygons, reference_image, reference_polygons = _build_fixture_image(case)
+    image, gt_polygons, reference_image, reference_polygons, circle_gt = _build_fixture_image(case)
     segmenter = MapSegmenter(image)
 
     start = time.perf_counter()
@@ -229,6 +265,33 @@ def run_case(case: Dict, thresholds: Dict) -> Dict:
     legacy_geo_error = float(np.mean(legacy_geo_errors)) if legacy_geo_errors else float("inf")
     cv_auto_geo_error = float(np.mean(cv_auto_geo_errors)) if cv_auto_geo_errors else float("inf")
     cv_metrics = cv_auto_georef.get_transform_metrics()
+    circle_center_error_m = None
+    circle_radius_error_m = None
+    if circle_gt is not None:
+        circle_result = detect_and_georeference_circle(image, georef, strict_center_target_m=5.0)
+        target_lon, target_lat = _pixel_to_geo(
+            case["bounds"],
+            reference_image.shape[1],
+            reference_image.shape[0],
+            circle_gt["warped_center_px"][0],
+            circle_gt["warped_center_px"][1],
+        )
+        target_edge_lon, target_edge_lat = _pixel_to_geo(
+            case["bounds"],
+            reference_image.shape[1],
+            reference_image.shape[0],
+            circle_gt["warped_center_px"][0] + circle_gt["radius_px"],
+            circle_gt["warped_center_px"][1],
+        )
+        pred_lon, pred_lat = circle_result["geo_center"]
+        circle_center_error_m = _distance_geo_meters(pred_lon, pred_lat, target_lon, target_lat)
+        target_radius_m = _distance_geo_meters(
+            target_lon,
+            target_lat,
+            target_edge_lon,
+            target_edge_lat,
+        )
+        circle_radius_error_m = abs(float(circle_result["radius_m"]) - float(target_radius_m))
 
     case_result = {
         "case": case["name"],
@@ -239,6 +302,8 @@ def run_case(case: Dict, thresholds: Dict) -> Dict:
         "cv_auto_georef_error_m": round(cv_auto_geo_error, 2),
         "cv_auto_mode_used": cv_metrics.get("mode"),
         "cv_auto_confidence": cv_metrics.get("cv_confidence", None),
+        "circle_center_error_m": round(circle_center_error_m, 2) if circle_center_error_m is not None else None,
+        "circle_radius_error_m": round(circle_radius_error_m, 2) if circle_radius_error_m is not None else None,
         "conversion_time_s": round(elapsed, 3),
         "pred_polygons": len(pred_polygons),
         "gt_polygons": len(gt_polygons),
@@ -254,6 +319,11 @@ def evaluate(results: List[Dict], thresholds: Dict) -> Tuple[bool, Dict]:
     mean_legacy_georef_error = float(np.mean([r["legacy_georef_error_m"] for r in results]))
     mean_cv_auto_georef_error = float(np.mean([r["cv_auto_georef_error_m"] for r in results]))
 
+    center_errors = [r["circle_center_error_m"] for r in results if r.get("circle_center_error_m") is not None]
+    radius_errors = [r["circle_radius_error_m"] for r in results if r.get("circle_radius_error_m") is not None]
+    center_p50 = float(np.percentile(center_errors, 50)) if center_errors else None
+    radius_p50 = float(np.percentile(radius_errors, 50)) if radius_errors else None
+
     summary = {
         "mean_precision": round(mean_precision, 4),
         "mean_recall": round(mean_recall, 4),
@@ -265,6 +335,9 @@ def evaluate(results: List[Dict], thresholds: Dict) -> Tuple[bool, Dict]:
 
     cv_auto_gain = mean_legacy_georef_error - mean_cv_auto_georef_error
     required_gain = float(thresholds.get("cv_auto_min_improvement_m", 1000.0))
+    target_next_phase = float(
+        thresholds.get("cv_auto_target_next_phase_m", required_gain),
+    )
     passed = (
         mean_precision >= thresholds["min_precision"]
         and mean_recall >= thresholds["min_recall"]
@@ -272,6 +345,28 @@ def evaluate(results: List[Dict], thresholds: Dict) -> Tuple[bool, Dict]:
         and mean_time <= thresholds["max_conversion_time_s"]
         and cv_auto_gain >= required_gain
     )
+    summary["cv_auto_gain_m"] = round(cv_auto_gain, 2)
+    summary["cv_auto_min_required_gain_m"] = round(required_gain, 2)
+    summary["cv_auto_next_phase_target_m"] = round(target_next_phase, 2)
+    summary["cv_auto_next_phase_gap_m"] = round(target_next_phase - cv_auto_gain, 2)
+    summary["cv_auto_next_phase_ready"] = bool(cv_auto_gain >= target_next_phase)
+    if center_p50 is not None:
+        summary["circle_center_error_p50_m"] = round(center_p50, 2)
+    if radius_p50 is not None:
+        summary["circle_radius_error_p50_m"] = round(radius_p50, 2)
+
+    circle_center_gate = float(thresholds.get("circle_center_error_p50_max_m", 20.0))
+    circle_radius_gate = float(thresholds.get("circle_radius_error_p50_max_m", 30.0))
+    circle_ok = True
+    if center_p50 is not None:
+        circle_ok = circle_ok and center_p50 <= circle_center_gate
+    if radius_p50 is not None:
+        circle_ok = circle_ok and radius_p50 <= circle_radius_gate
+
+    passed = passed and circle_ok
+    summary["circle_gate_center_max_m"] = round(circle_center_gate, 2)
+    summary["circle_gate_radius_max_m"] = round(circle_radius_gate, 2)
+    summary["circle_gate_pass"] = bool(circle_ok)
     return passed, summary
 
 

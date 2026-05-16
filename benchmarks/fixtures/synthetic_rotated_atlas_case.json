@@ -1,0 +1,42 @@
+{
+  "name": "synthetic_rotated_atlas_case",
+  "image": {
+    "width": 400,
+    "height": 260,
+    "rotation_degrees": 6.5,
+    "skew_x": 0.05,
+    "noise_sigma": 5.0,
+    "add_text_labels": true
+  },
+  "regions": [
+    {
+      "id": "region_alpha",
+      "color_bgr": [75, 125, 220],
+      "polygon": [[24, 28], [176, 32], [164, 112], [30, 104]]
+    },
+    {
+      "id": "region_beta",
+      "color_bgr": [95, 185, 90],
+      "polygon": [[126, 84], [276, 70], [290, 170], [132, 182]]
+    },
+    {
+      "id": "region_gamma",
+      "color_bgr": [188, 92, 90],
+      "polygon": [[42, 150], [186, 142], [204, 242], [52, 248]]
+    }
+  ],
+  "bounds": {
+    "north": 50.0,
+    "south": 39.0,
+    "east": 21.0,
+    "west": 5.0
+  },
+  "georeferencing": {
+    "mode": "affine",
+    "gcps": [
+      { "pixel_x": 0, "pixel_y": 0, "lon": 5.0, "lat": 50.0 },
+      { "pixel_x": 400, "pixel_y": 0, "lon": 21.0, "lat": 50.0 },
+      { "pixel_x": 0, "pixel_y": 260, "lon": 5.0, "lat": 39.0 }
+    ]
+  }
+}

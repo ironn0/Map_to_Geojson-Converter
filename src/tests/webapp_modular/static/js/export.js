@@ -26,8 +26,8 @@ export async function generateGeoJSON() {
         toast('Carica prima un\'immagine', 'warning');
         return null;
     }
-    if (state.regions.length === 0 && state.points.length === 0) {
-        toast('Nessuna regione o punto da esportare. Esegui prima la segmentazione!', 'warning');
+    if (state.regions.length === 0 && state.points.length === 0 && !state.detectedCircle) {
+        toast('Nessuna regione, punto o cerchio da esportare.', 'warning');
         return null;
     }
     
@@ -59,7 +59,8 @@ export async function generateGeoJSON() {
             const backendGeojson = await api.exportGeoJSON({ 
                 session_id: state.sessionId, 
                 bounds: bounds,
-                georeferencing: georeferencing || undefined
+                georeferencing: georeferencing || undefined,
+                include_detected_circle: true,
             });
             geojson.features = backendGeojson.features || [];
             if (georeferencing) {

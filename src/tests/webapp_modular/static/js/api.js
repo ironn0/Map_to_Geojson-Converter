@@ -180,3 +180,24 @@ export async function addRegion(params) {
         body: JSON.stringify(params),
     });
 }
+
+/**
+ * Rileva e georeferenzia un cerchio dall'immagine sessione
+ * @param {Object} params
+ * @returns {Promise<Object>}
+ */
+export async function detectCircle(params) {
+    return api('/detect-circle', {
+        method: 'POST',
+        body: JSON.stringify(params),
+    });
+}
+
+/**
+ * Cancella il cerchio rilevato in sessione
+ * @param {string} sessionId
+ * @returns {Promise<Object>}
+ */
+export async function clearDetectedCircle(sessionId) {
+    return api(`/detect-circle/${sessionId}`, { method: 'DELETE' });
+}

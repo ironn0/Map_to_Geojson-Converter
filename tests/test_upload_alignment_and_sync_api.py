@@ -61,6 +61,27 @@ def test_upload_accepts_valid_png():
     assert body["session_id"] in sessions
 
 
+def test_upload_accepts_octet_stream_if_extension_is_valid():
+    client = TestClient(app)
+    image = _test_image()
+    payload = _encode_png_bytes(image)
+    response = client.post(
+        "/api/upload",
+        files={"file": ("camera-export.jpg", io.BytesIO(payload), "application/octet-stream")},
+    )
+    assert response.status_code == 200
+    assert response.json()["session_id"] in sessions
+
+
+def test_upload_rejects_non_image_even_with_octet_stream():
+    client = TestClient(app)
+    response = client.post(
+        "/api/upload",
+        files={"file": ("not_image.txt", io.BytesIO(b"hello-world"), "application/octet-stream")},
+    )
+    assert response.status_code == 400
+
+
 def test_upload_reference_invalid_geojson_type_returns_400():
     client = TestClient(app)
     response = client.post(

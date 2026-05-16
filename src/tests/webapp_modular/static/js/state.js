@@ -43,7 +43,8 @@ export const state = {
     referenceGeojson: null,
     referenceName: null,
     cvReferenceImageBase64: null,
-    cvReferenceImageName: null
+    cvReferenceImageName: null,
+    detectedCircle: null
 };
 
 /**
@@ -72,6 +73,7 @@ export function resetState() {
     state.referenceName = null;
     state.cvReferenceImageBase64 = null;
     state.cvReferenceImageName = null;
+    state.detectedCircle = null;
     state.georefInitialBounds = null;
     state.georefDirty = false;
     state.georefRotationDegrees = 0;

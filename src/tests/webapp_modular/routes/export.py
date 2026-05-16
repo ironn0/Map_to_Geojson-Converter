@@ -24,8 +24,9 @@ async def export_geojson(req: ExportRequest):
         raise HTTPException(404, "Sessione non trovata")
 
     regions = session["regions"]
-    
-    if not regions:
+
+    has_circle = bool(req.include_detected_circle and session.get("detected_circle"))
+    if not regions and not has_circle:
         raise HTTPException(400, "Nessuna regione da esportare")
 
     bounds_dict = req.bounds.model_dump()
@@ -92,6 +93,28 @@ async def export_geojson(req: ExportRequest):
             "geometry": geometry,
         })
 
+    if req.include_detected_circle and session.get("detected_circle"):
+        circle = session["detected_circle"]
+        circle_props = {
+            "type": "detected-circle",
+            "circle": {
+                "center": circle.get("geo_center"),
+                "radius_m": circle.get("radius_m"),
+                "radius_std_m": circle.get("radius_std_m"),
+                "accuracy_level": circle.get("accuracy_level"),
+                "estimated_center_error_m": circle.get("estimated_center_error_m"),
+                "confidence": circle.get("confidence"),
+                "quality_metrics": circle.get("quality_metrics", {}),
+            },
+        }
+        features.append(
+            {
+                "type": "Feature",
+                "properties": circle_props,
+                "geometry": circle.get("geojson_geometry"),
+            }
+        )
+
     response_payload = {
         "type": "FeatureCollection",
         "properties": {
@@ -99,6 +122,9 @@ async def export_geojson(req: ExportRequest):
             "bounds": bounds_dict,
             "georeferencing": georef.get_transform_metrics(),
             "geometry_sanitize": sanitize_cfg,
+            "detected_circle_included": bool(
+                req.include_detected_circle and session.get("detected_circle")
+            ),
         },
         "features": features,
     }

@@ -85,6 +85,7 @@ KPIs:
 - No unresolved P1 bugs at release cut.
 - Release benchmark command (`python benchmarks/run_benchmark.py`) returns PASS.
 - Difficult-map benchmark shows measurable georeferencing gain with `cv_auto` vs legacy bounds.
+- `cv_auto` benchmark gain remains positive at release gate and tracks a stricter next-phase target.
 
 ## Release checklist for v1.0.0
 - [ ] `python scripts/verify.py` passes locally.

@@ -25,6 +25,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_CONTENT_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
+ALLOWED_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".jpe", ".jfif", ".webp", ".bmp", ".tif", ".tiff"]
 THUMBNAIL_MAX_DIM = 1200
 SESSION_TTL_SECONDS = 60 * 60 * 4  # 4h
 

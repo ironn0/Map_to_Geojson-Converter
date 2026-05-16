@@ -56,6 +56,8 @@ export const el = {
     segmentBtn: $('segment-btn'),
     clickModeBtn: $('click-mode-btn'),
     georefBtn: $('georef-btn'),
+    detectCircleBtn: $('detect-circle-btn'),
+    circleDetectionStatus: $('circle-detection-status'),
     previewBtn: $('preview-btn'),
     copyBtn: $('copy-btn'),
     exportBtn: $('export-btn'),

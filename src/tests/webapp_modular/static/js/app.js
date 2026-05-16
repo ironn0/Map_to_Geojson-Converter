@@ -25,11 +25,14 @@ import {
     getBounds, handlePresetChange, openGeorefModal, closeGeorefModal,
     updateGeorefOverlay, applyGeoref, handleReferenceUpload, clearReference, alignToTerritories,
     handleCvReferenceImageUpload, syncCvReferenceBoundsFromCurrent, updateCvAutoUiState, resetCvAutoUiState,
-    clearCvReference, resetGeorefPosition, fitGeorefView, applyReferenceGeojsonBounds, resetGeorefRotation
+    clearCvReference, resetGeorefPosition, fitGeorefView, applyReferenceGeojsonBounds, resetGeorefRotation,
+    getGeoreferencingPayload, validateCvAutoConfiguration
 } from './georef.js';
 import { generateGeoJSON, exportAndDownload, previewGeoJSON, copyGeoJSON, downloadGeoJSON } from './export.js';
 import { startDrawPolygon, startDrawPoint, handleDrawClick, finishDrawing, cancelDrawing } from './drawing.js';
 import { openRenameModal, closeRenameModal, saveRename } from './rename.js';
+
+const ACCEPTED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'jpe', 'jfif', 'webp', 'bmp', 'tif', 'tiff'];
 
 // ==================== Initialize ====================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -77,7 +80,11 @@ function setupEventListeners() {
             e.preventDefault();
             el.uploadArea.classList.remove('dragover');
             const file = e.dataTransfer.files[0];
-            if (file?.type.startsWith('image/')) uploadFile(file);
+            if (isLikelyImageFile(file)) {
+                uploadFile(file);
+            } else if (file) {
+                toast('File non supportato. Usa PNG, JPG, WebP, BMP o TIFF.', 'error');
+            }
         });
     });
     
@@ -98,6 +105,7 @@ function setupEventListeners() {
     el.segmentBtn.addEventListener('click', runSegmentation);
     el.clickModeBtn.addEventListener('click', toggleClickMode);
     el.georefBtn.addEventListener('click', openGeorefModal);
+    el.detectCircleBtn?.addEventListener('click', detectCircle);
     el.previewBtn.addEventListener('click', previewGeoJSON);
     el.copyBtn.addEventListener('click', copyGeoJSON);
     el.exportBtn.addEventListener('click', exportAndDownload);
@@ -252,6 +260,7 @@ async function uploadFile(file) {
         state.imageHeight = data.height;
         state.regions = [];
         state.imageBase64 = data.image;
+        state.detectedCircle = null;
         
         displayImage(data.image);
         el.emptyState.classList.add('hidden');
@@ -260,6 +269,7 @@ async function uploadFile(file) {
         
         el.clearBtn.disabled = false;
         updateStep(2, state);
+        updateCircleStatus();
         
         toast('Immagine caricata! Procedi con la segmentazione.', 'success');
     } catch (e) {
@@ -267,6 +277,14 @@ async function uploadFile(file) {
     } finally {
         hideLoading();
     }
+}
+
+function isLikelyImageFile(file) {
+    if (!file) return false;
+    if (file.type?.startsWith('image/')) return true;
+    const parts = (file.name || '').toLowerCase().split('.');
+    const ext = parts.length > 1 ? parts.pop() : '';
+    return ACCEPTED_IMAGE_EXTENSIONS.includes(ext);
 }
 
 function displayImage(base64) {
@@ -295,6 +313,7 @@ function displayImage(base64) {
 async function clearSession() {
     if (state.sessionId) {
         try { await api.deleteSession(state.sessionId); } catch (e) {}
+        try { await api.clearDetectedCircle(state.sessionId); } catch (e) {}
     }
     
     resetState();
@@ -308,9 +327,59 @@ async function clearSession() {
     el.bottomBar.classList.add('hidden');
     el.fileInput.value = '';
     el.clearBtn.disabled = true;
+    updateCircleStatus();
     
     updateStep(1, state);
     toast('Sessione terminata', 'info');
+}
+
+async function detectCircle() {
+    if (!state.sessionId) {
+        toast('Carica prima un\'immagine', 'warning');
+        return;
+    }
+
+    if (!validateCvAutoConfiguration()) {
+        return;
+    }
+    showLoading('Rilevamento cerchio...');
+    try {
+        const payload = {
+            session_id: state.sessionId,
+            bounds: getBounds(),
+            strict_center_target_m: 5.0,
+        };
+        const georeferencing = getGeoreferencingPayload();
+        if (georeferencing) {
+            payload.georeferencing = georeferencing;
+        }
+        const data = await api.detectCircle(payload);
+        state.detectedCircle = data.circle;
+        updateCircleStatus();
+        const c = data.circle;
+        toast(
+            `Cerchio rilevato • centro ${c.geo_center[1].toFixed(5)}, ${c.geo_center[0].toFixed(5)} • raggio ${Math.round(c.radius_m)}m`,
+            'success',
+        );
+    } catch (e) {
+        state.detectedCircle = null;
+        updateCircleStatus();
+        toast('Errore rilevamento cerchio: ' + e.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateCircleStatus() {
+    if (!el.circleDetectionStatus) return;
+    if (!state.detectedCircle) {
+        el.circleDetectionStatus.textContent = 'Cerchio: non rilevato';
+        return;
+    }
+    const c = state.detectedCircle;
+    const acc = c.accuracy_level || 'n/d';
+    const conf = typeof c.confidence === 'number' ? c.confidence.toFixed(3) : 'n/d';
+    el.circleDetectionStatus.textContent = `Cerchio: ${Math.round(c.radius_m)}m • accuratezza ${acc} • conf ${conf}`;
 }
 
 // ==================== Segmentation ====================

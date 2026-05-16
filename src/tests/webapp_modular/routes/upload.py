@@ -10,7 +10,13 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from config import ALLOWED_CONTENT_TYPES, MAX_IMAGE_SIZE, THUMBNAIL_MAX_DIM, UPLOAD_DIR
+from config import (
+    ALLOWED_CONTENT_TYPES,
+    ALLOWED_IMAGE_EXTENSIONS,
+    MAX_IMAGE_SIZE,
+    THUMBNAIL_MAX_DIM,
+    UPLOAD_DIR,
+)
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from segmentation import MapSegmenter
 from session_manager import create_session, prune_expired_sessions
@@ -22,9 +28,18 @@ router = APIRouter(prefix="/api", tags=["upload"])
 @router.post("/upload")
 async def upload_image(file: UploadFile = File(...)):
     """Carica un'immagine per l'elaborazione"""
-    
-    if file.content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(400, "Tipo file non supportato. Usa: PNG, JPG, WebP")
+
+    content_type = (file.content_type or "").lower()
+    suffix = Path(file.filename or "").suffix.lower()
+    if not _is_supported_upload(content_type, suffix):
+        raise HTTPException(
+            400,
+            (
+                "Tipo file non supportato. "
+                f"Ricevuto content-type '{content_type or 'n/d'}' e estensione '{suffix or 'n/d'}'. "
+                "Usa PNG, JPG, WebP, BMP o TIFF."
+            ),
+        )
 
     content = await file.read()
     if len(content) == 0:
@@ -66,3 +81,14 @@ async def upload_image(file: UploadFile = File(...)):
         "height": height,
         "image": image_to_base64(thumb)
     }
+
+
+def _is_supported_upload(content_type: str, suffix: str) -> bool:
+    if content_type in ALLOWED_CONTENT_TYPES:
+        return True
+    # Alcuni browser/OS inviano MIME non standard (es. image/pjpeg) oppure vuoto/octet-stream.
+    if content_type.startswith("image/"):
+        return True
+    if content_type in ("", "application/octet-stream") and suffix in ALLOWED_IMAGE_EXTENSIONS:
+        return True
+    return False
