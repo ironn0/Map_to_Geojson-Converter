@@ -10,6 +10,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from billing_store import consume_quota
 from config import (
     ALLOWED_CONTENT_TYPES,
     ALLOWED_IMAGE_EXTENSIONS,
@@ -17,7 +18,7 @@ from config import (
     THUMBNAIL_MAX_DIM,
     UPLOAD_DIR,
 )
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, Header, HTTPException, UploadFile
 from segmentation import MapSegmenter
 from session_manager import create_session, prune_expired_sessions
 from utils import image_to_base64, resize_image
@@ -26,7 +27,10 @@ router = APIRouter(prefix="/api", tags=["upload"])
 
 
 @router.post("/upload")
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(
+    file: UploadFile = File(...),
+    authorization: str = Header(default="", alias="Authorization"),
+):
     """Carica un'immagine per l'elaborazione"""
 
     content_type = (file.content_type or "").lower()
@@ -73,6 +77,12 @@ async def upload_image(file: UploadFile = File(...)):
         "regions": [],
         "segmenter": MapSegmenter(image)
     })
+    try:
+        consume_quota(authorization, metric="uploads", amount=1)
+    except PermissionError as exc:
+        raise HTTPException(429, str(exc))
+    except ValueError:
+        pass
     
     return {
         "session_id": session_id,

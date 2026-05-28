@@ -278,6 +278,49 @@ class CircleDetectResponse(BaseModel):
     georeferencing: Dict
 
 
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    full_name: Optional[str] = None
+    workspace_name: str = "My Workspace"
+
+    @model_validator(mode="after")
+    def validate_values(self):
+        if "@" not in self.email:
+            raise ValueError("Email non valida")
+        if len(self.password) < 8:
+            raise ValueError("Password troppo corta (min 8)")
+        if len(self.workspace_name.strip()) < 2:
+            raise ValueError("workspace_name deve avere almeno 2 caratteri")
+        return self
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class WorkspaceCreateRequest(BaseModel):
+    name: str
+
+    @model_validator(mode="after")
+    def validate_name(self):
+        if len(self.name.strip()) < 2:
+            raise ValueError("name deve avere almeno 2 caratteri")
+        return self
+
+
+class ProjectCreateRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_name(self):
+        if len(self.name.strip()) < 2:
+            raise ValueError("name deve avere almeno 2 caratteri")
+        return self
+
+
 class RegionDict(BaseModel):
     """Dizionario regione per JSON"""
     id: int

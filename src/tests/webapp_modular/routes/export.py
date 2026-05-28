@@ -5,8 +5,9 @@ Endpoint per l'esportazione GeoJSON
 Author: Map to GeoJSON Converter Project
 """
 
+from billing_store import consume_quota
 from config import GEO_PRESETS, GEOMETRY_SANITIZE_DEFAULTS
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from georeferencing import Georeferencer, sanitize_polygon_geometry
 from models import ExportRequest
 from session_manager import get_session
@@ -16,7 +17,10 @@ router = APIRouter(prefix="/api", tags=["export"])
 
 
 @router.post("/export")
-async def export_geojson(req: ExportRequest):
+async def export_geojson(
+    req: ExportRequest,
+    authorization: str = Header(default="", alias="Authorization"),
+):
     """Esporta le regioni in formato GeoJSON"""
     
     session = get_session(req.session_id)
@@ -128,6 +132,12 @@ async def export_geojson(req: ExportRequest):
         },
         "features": features,
     }
+    try:
+        consume_quota(authorization, metric="exports", amount=1)
+    except PermissionError as exc:
+        raise HTTPException(429, str(exc))
+    except ValueError:
+        pass
     return response_payload
 
 

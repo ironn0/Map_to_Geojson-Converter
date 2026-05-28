@@ -2,7 +2,8 @@
 Circle detection routes.
 """
 
-from fastapi import APIRouter, HTTPException
+from billing_store import consume_quota
+from fastapi import APIRouter, Header, HTTPException
 from georeferencing import Georeferencer, detect_and_georeference_circle
 from models import CircleDetectRequest
 from session_manager import get_session
@@ -12,7 +13,10 @@ router = APIRouter(prefix="/api", tags=["circle"])
 
 
 @router.post("/detect-circle")
-async def detect_circle(req: CircleDetectRequest):
+async def detect_circle(
+    req: CircleDetectRequest,
+    authorization: str = Header(default="", alias="Authorization"),
+):
     session = get_session(req.session_id)
     if session is None:
         raise HTTPException(404, "Sessione non trovata")
@@ -40,6 +44,12 @@ async def detect_circle(req: CircleDetectRequest):
         raise HTTPException(400, str(exc))
 
     session["detected_circle"] = circle_result
+    try:
+        consume_quota(authorization, metric="circle_detections", amount=1)
+    except PermissionError as exc:
+        raise HTTPException(429, str(exc))
+    except ValueError:
+        pass
     return {
         "success": True,
         "circle": circle_result,

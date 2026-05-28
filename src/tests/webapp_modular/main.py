@@ -27,10 +27,13 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from routes import (
     alignment_router,
+    auth_router,
+    billing_router,
     circle_router,
     export_router,
     segmentation_router,
     upload_router,
+    workspace_router,
 )
 from session_manager import delete_session
 
@@ -59,6 +62,9 @@ app.include_router(segmentation_router)
 app.include_router(export_router)
 app.include_router(alignment_router)
 app.include_router(circle_router)
+app.include_router(auth_router)
+app.include_router(workspace_router)
+app.include_router(billing_router)
 
 # ==================== Static Pages ====================
 

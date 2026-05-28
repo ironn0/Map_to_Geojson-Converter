@@ -13,6 +13,28 @@ from pathlib import Path
 APP_NAME = "Map to GeoJSON"
 APP_VERSION = "2.0.0"
 APP_DESCRIPTION = "Converti immagini di mappe in GeoJSON - Versione Modulare"
+AUTH_ENABLED = False
+AUTH_TOKEN_TTL_SECONDS = 60 * 60 * 12  # 12h
+BILLING_ENABLED = True
+BILLING_WEBHOOK_SECRET = ""
+
+PLAN_LIMITS = {
+    "free": {
+        "uploads": 20,
+        "exports": 30,
+        "circle_detections": 3,
+    },
+    "pro": {
+        "uploads": 500,
+        "exports": 1000,
+        "circle_detections": 500,
+    },
+    "team": {
+        "uploads": 5000,
+        "exports": 10000,
+        "circle_detections": 5000,
+    },
+}
 
 # ==================== Directories ====================
 
