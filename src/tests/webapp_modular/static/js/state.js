@@ -44,7 +44,10 @@ export const state = {
     referenceName: null,
     cvReferenceImageBase64: null,
     cvReferenceImageName: null,
-    detectedCircle: null
+    detectedCircle: null,
+    projectHistory: [],
+    activeJobs: [],
+    latestQualityMessage: 'Pronto a iniziare.'
 };
 
 /**
@@ -74,6 +77,9 @@ export function resetState() {
     state.cvReferenceImageBase64 = null;
     state.cvReferenceImageName = null;
     state.detectedCircle = null;
+    state.projectHistory = [];
+    state.activeJobs = [];
+    state.latestQualityMessage = 'Pronto a iniziare.';
     state.georefInitialBounds = null;
     state.georefDirty = false;
     state.georefRotationDegrees = 0;

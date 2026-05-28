@@ -54,6 +54,15 @@
                     </div>
                 </nav>
 
+                <div class="panel">
+                    <h3 class="panel-title">Guida Rapida</h3>
+                    <p id="wizard-guidance" class="text-muted">Step 1/4 - Upload: Carica una mappa</p>
+                    <button id="wizard-next-action-btn" class="btn btn-primary btn-block mt-2">
+                        Carica una mappa
+                    </button>
+                    <p id="quality-message" class="text-muted mt-2">Pronto a iniziare.</p>
+                </div>
+
                 <!-- Step 1: Upload Panel -->
                 <div class="step-panel" id="panel-upload">
                     <div class="panel">
@@ -268,6 +277,28 @@
                 <button id="clear-btn" class="btn btn-danger btn-block mt-2" disabled>
                     🗑️ Ricomincia
                 </button>
+
+                <div class="panel mt-2">
+                    <h3 class="panel-title">Cronologia Progetto</h3>
+                    <ul id="project-history-list" class="text-muted" style="margin:0; padding-left:16px;">
+                        <li>Nessuna attivita ancora</li>
+                    </ul>
+                </div>
+
+                <div class="panel mt-2">
+                    <h3 class="panel-title">Stato Job</h3>
+                    <ul id="job-status-list" class="text-muted" style="margin:0; padding-left:16px;">
+                        <li>Nessun job in corso</li>
+                    </ul>
+                </div>
+
+                <div class="panel mt-2">
+                    <h3 class="panel-title">Dashboard Errori</h3>
+                    <button id="refresh-ops-btn" class="btn btn-secondary btn-block mb-2">Aggiorna dashboard</button>
+                    <ul id="error-dashboard-list" class="text-muted" style="margin:0; padding-left:16px;">
+                        <li>Nessun errore operativo recente</li>
+                    </ul>
+                </div>
             </div>
         </aside>
 

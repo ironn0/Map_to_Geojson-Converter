@@ -19,6 +19,13 @@ export const el = {
     panelSegment: $('panel-segment'),
     panelGeoref: $('panel-georef'),
     panelExport: $('panel-export'),
+    wizardGuidance: $('wizard-guidance'),
+    wizardNextActionBtn: $('wizard-next-action-btn'),
+    qualityMessage: $('quality-message'),
+    projectHistoryList: $('project-history-list'),
+    jobStatusList: $('job-status-list'),
+    errorDashboardList: $('error-dashboard-list'),
+    refreshOpsBtn: $('refresh-ops-btn'),
     
     // Canvas
     canvas: $('main-canvas'),

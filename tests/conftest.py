@@ -20,15 +20,31 @@ def clear_sessions():
         from billing_store import reset_billing_state
     except Exception:
         reset_billing_state = None
+    try:
+        from job_manager import reset_jobs
+    except Exception:
+        reset_jobs = None
+    try:
+        from ops_log import reset_ops_logs
+    except Exception:
+        reset_ops_logs = None
 
     sessions.clear()
     if reset_auth_state:
         reset_auth_state()
     if reset_billing_state:
         reset_billing_state()
+    if reset_jobs:
+        reset_jobs()
+    if reset_ops_logs:
+        reset_ops_logs()
     yield
     sessions.clear()
     if reset_auth_state:
         reset_auth_state()
     if reset_billing_state:
         reset_billing_state()
+    if reset_jobs:
+        reset_jobs()
+    if reset_ops_logs:
+        reset_ops_logs()

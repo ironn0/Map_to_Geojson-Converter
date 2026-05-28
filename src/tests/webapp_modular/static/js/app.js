@@ -46,6 +46,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateCvAutoUiState();
     updateStep(1, state);
     setTool('select');
+    renderWizardGuidance();
+    renderProjectHistory();
+    renderJobStatus();
+    await refreshOperationalDashboard();
 });
 
 // ==================== Event Listeners ====================
@@ -108,8 +112,15 @@ function setupEventListeners() {
     el.detectCircleBtn?.addEventListener('click', detectCircle);
     el.previewBtn.addEventListener('click', previewGeoJSON);
     el.copyBtn.addEventListener('click', copyGeoJSON);
-    el.exportBtn.addEventListener('click', exportAndDownload);
+    el.exportBtn.addEventListener('click', async () => {
+        await exportAndDownload();
+        addProjectHistory('Export completato', 'GeoJSON scaricato');
+        refreshOperationalDashboard();
+    });
     el.clearBtn.addEventListener('click', clearSession);
+    el.wizardNextActionBtn?.addEventListener('click', executeNextRecommendedAction);
+    el.refreshOpsBtn?.addEventListener('click', () => refreshOperationalDashboard());
+    document.addEventListener('wizard:step-changed', () => renderWizardGuidance());
     
     // Presets
     el.presetSelect.addEventListener('change', handlePresetChange);
@@ -269,6 +280,7 @@ async function uploadFile(file) {
         
         el.clearBtn.disabled = false;
         updateStep(2, state);
+        addProjectHistory('Upload completato', `${data.filename} (${data.width}x${data.height})`);
         updateCircleStatus();
         
         toast('Immagine caricata! Procedi con la segmentazione.', 'success');
@@ -330,6 +342,8 @@ async function clearSession() {
     updateCircleStatus();
     
     updateStep(1, state);
+    addProjectHistory('Sessione resettata', 'Hai ricominciato da zero');
+    renderJobStatus();
     toast('Sessione terminata', 'info');
 }
 
@@ -342,7 +356,7 @@ async function detectCircle() {
     if (!validateCvAutoConfiguration()) {
         return;
     }
-    showLoading('Rilevamento cerchio...');
+    showLoading('Rilevamento cerchio in coda...');
     try {
         const payload = {
             session_id: state.sessionId,
@@ -353,10 +367,15 @@ async function detectCircle() {
         if (georeferencing) {
             payload.georeferencing = georeferencing;
         }
-        const data = await api.detectCircle(payload);
+        const queued = await api.startDetectCircleJob(payload);
+        const data = await waitForJobResult(queued.job.id, 'Rilevamento cerchio');
         state.detectedCircle = data.circle;
         updateCircleStatus();
         const c = data.circle;
+        addProjectHistory(
+            'Cerchio georeferenziato',
+            `${Math.round(c.radius_m)}m • ${c.accuracy_level || 'n/d'}`,
+        );
         toast(
             `Cerchio rilevato • centro ${c.geo_center[1].toFixed(5)}, ${c.geo_center[0].toFixed(5)} • raggio ${Math.round(c.radius_m)}m`,
             'success',
@@ -374,26 +393,37 @@ function updateCircleStatus() {
     if (!el.circleDetectionStatus) return;
     if (!state.detectedCircle) {
         el.circleDetectionStatus.textContent = 'Cerchio: non rilevato';
+        state.latestQualityMessage = 'Nessun cerchio rilevato: procedi pure con i poligoni.';
+        renderWizardGuidance();
         return;
     }
     const c = state.detectedCircle;
     const acc = c.accuracy_level || 'n/d';
     const conf = typeof c.confidence === 'number' ? c.confidence.toFixed(3) : 'n/d';
     el.circleDetectionStatus.textContent = `Cerchio: ${Math.round(c.radius_m)}m • accuratezza ${acc} • conf ${conf}`;
+    if (acc === 'strict') {
+        state.latestQualityMessage = 'Qualita alta: cerchio preciso, pronto per export.';
+    } else if (acc === 'medium') {
+        state.latestQualityMessage = 'Qualita media: verifica visualmente il cerchio prima di esportare.';
+    } else {
+        state.latestQualityMessage = 'Qualita bassa: usa "Posiziona su Mappa" o riferimenti CV per migliorare il risultato.';
+    }
+    renderWizardGuidance();
 }
 
 // ==================== Segmentation ====================
 async function runSegmentation() {
     if (!state.sessionId) return;
-    showLoading('Analisi dell\'immagine...');
+    showLoading('Segmentazione in coda...');
     exitEditMode(renderPolygons);
     
     try {
-        const data = await api.runSegmentation({
+        const queued = await api.startSegmentationJob({
             session_id: state.sessionId,
             n_colors: parseInt(el.nColors.value),
             min_area: parseInt(el.minArea.value)
         });
+        const data = await waitForJobResult(queued.job.id, 'Segmentazione');
         
         state.regions = data.regions;
         displayImage(data.visualization);
@@ -403,6 +433,7 @@ async function runSegmentation() {
         if (state.regions.length > 0) {
             updateStep(3, state);
         }
+        addProjectHistory('Segmentazione completata', `${data.num_regions} regioni rilevate`);
         
         toast(`Trovate ${data.num_regions} regioni!`, 'success');
     } catch (e) {
@@ -645,6 +676,121 @@ function startDragVertex(regionIdx, vertexIdx) {
 // ==================== Regions List ====================
 function updateRegionsList() {
     if (el.alignBtn) el.alignBtn.disabled = state.regions.length === 0;
+    renderWizardGuidance();
+}
+
+function addProjectHistory(action, details = '') {
+    const ts = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    state.projectHistory.unshift({ ts, action, details });
+    if (state.projectHistory.length > 25) state.projectHistory.length = 25;
+    renderProjectHistory();
+}
+
+function renderProjectHistory() {
+    if (!el.projectHistoryList) return;
+    if (!state.projectHistory.length) {
+        el.projectHistoryList.innerHTML = '<li class="text-muted">Nessuna attivita ancora</li>';
+        return;
+    }
+    el.projectHistoryList.innerHTML = state.projectHistory
+        .map(item => `<li><strong>${item.ts}</strong> - ${item.action}${item.details ? ` (${item.details})` : ''}</li>`)
+        .join('');
+}
+
+function getNextRecommendedAction() {
+    if (!state.sessionId) return { label: 'Carica una mappa', fn: () => el.fileInput?.click() };
+    if (state.currentStep <= 2 && state.regions.length === 0) return { label: 'Avvia segmentazione', fn: runSegmentation };
+    if (state.currentStep <= 3 && state.regions.length > 0) return { label: 'Controlla georeferenziazione', fn: openGeorefModal };
+    if (state.currentStep < 4 && (state.regions.length > 0 || state.detectedCircle)) return { label: 'Vai a Export', fn: () => updateStep(4, state) };
+    return { label: 'Scarica GeoJSON', fn: exportAndDownload };
+}
+
+function renderWizardGuidance() {
+    const next = getNextRecommendedAction();
+    if (el.wizardGuidance) {
+        const stepLabels = {
+            1: 'Step 1/4 - Upload',
+            2: 'Step 2/4 - Segmentazione',
+            3: 'Step 3/4 - Georeferenziazione',
+            4: 'Step 4/4 - Export',
+        };
+        el.wizardGuidance.textContent = `${stepLabels[state.currentStep] || ''}: ${next.label}`;
+    }
+    if (el.qualityMessage) {
+        el.qualityMessage.textContent = state.latestQualityMessage;
+    }
+    if (el.wizardNextActionBtn) {
+        el.wizardNextActionBtn.textContent = next.label;
+    }
+}
+
+function executeNextRecommendedAction() {
+    const next = getNextRecommendedAction();
+    if (typeof next.fn === 'function') next.fn();
+}
+
+function renderJobStatus() {
+    if (!el.jobStatusList) return;
+    if (!state.activeJobs.length) {
+        el.jobStatusList.innerHTML = '<li class="text-muted">Nessun job in corso</li>';
+        return;
+    }
+    el.jobStatusList.innerHTML = state.activeJobs
+        .map(job => `<li><strong>${job.type}</strong> - ${job.status} (tentativi ${job.attempts}/${job.max_attempts})</li>`)
+        .join('');
+}
+
+async function waitForJobResult(jobId, label = 'Job') {
+    const maxPoll = 120;
+    for (let i = 0; i < maxPoll; i += 1) {
+        const statusRes = await api.getJobStatus(jobId);
+        const job = statusRes.job;
+        const existingIdx = state.activeJobs.findIndex(j => j.id === job.id);
+        if (existingIdx >= 0) state.activeJobs[existingIdx] = job;
+        else state.activeJobs.push(job);
+        renderJobStatus();
+        if (job.status === 'completed') {
+            state.activeJobs = state.activeJobs.filter(j => j.id !== job.id);
+            renderJobStatus();
+            refreshOperationalDashboard();
+            return job.result;
+        }
+        if (job.status === 'failed') {
+            state.activeJobs = state.activeJobs.filter(j => j.id !== job.id);
+            renderJobStatus();
+            addProjectHistory(`${label} fallito`, job.error || 'Errore generico');
+            refreshOperationalDashboard();
+            throw new Error(job.error || `${label} fallito`);
+        }
+        await new Promise(resolve => setTimeout(resolve, 700));
+    }
+    throw new Error(`${label}: timeout monitoraggio job`);
+}
+
+async function refreshOperationalDashboard() {
+    if (!el.errorDashboardList) return;
+    try {
+        const [jobsRes, errorsRes] = await Promise.all([
+            api.listJobs(state.sessionId, 8),
+            api.listOperationalErrors(8),
+        ]);
+        const jobs = jobsRes.jobs || [];
+        const errors = errorsRes.errors || [];
+        state.activeJobs = jobs.filter(j => ['queued', 'running', 'retrying'].includes(j.status));
+        renderJobStatus();
+        if (!errors.length) {
+            el.errorDashboardList.innerHTML = '<li class="text-muted">Nessun errore operativo recente</li>';
+            return;
+        }
+        el.errorDashboardList.innerHTML = errors
+            .map(e => {
+                const code = e.extra?.code || 'N/A';
+                return `<li><strong>${code}</strong> - ${e.message}</li>`;
+            })
+            .join('');
+    } catch (err) {
+        el.errorDashboardList.innerHTML = `<li class="text-muted">Dashboard non disponibile: ${err.message}</li>`;
+    }
 }
 
 async function deleteRegion(id) {

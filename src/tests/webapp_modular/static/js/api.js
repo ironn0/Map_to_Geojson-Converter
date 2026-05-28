@@ -201,3 +201,32 @@ export async function detectCircle(params) {
 export async function clearDetectedCircle(sessionId) {
     return api(`/detect-circle/${sessionId}`, { method: 'DELETE' });
 }
+
+export async function startSegmentationJob(params) {
+    return api('/jobs/segment', {
+        method: 'POST',
+        body: JSON.stringify(params),
+    });
+}
+
+export async function startDetectCircleJob(params) {
+    return api('/jobs/detect-circle', {
+        method: 'POST',
+        body: JSON.stringify(params),
+    });
+}
+
+export async function getJobStatus(jobId) {
+    return api(`/jobs/${jobId}`);
+}
+
+export async function listJobs(sessionId, limit = 50) {
+    const q = new URLSearchParams();
+    if (sessionId) q.set('session_id', sessionId);
+    q.set('limit', String(limit));
+    return api(`/jobs?${q.toString()}`);
+}
+
+export async function listOperationalErrors(limit = 30) {
+    return api(`/ops/errors?limit=${limit}`);
+}

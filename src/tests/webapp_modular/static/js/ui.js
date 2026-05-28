@@ -81,6 +81,7 @@ export function updateStep(stepNum, state) {
     if (stepNum === 4) {
         updateExportStats(state);
     }
+    document.dispatchEvent(new CustomEvent('wizard:step-changed', { detail: { step: stepNum } }));
 }
 
 /**
@@ -93,7 +94,7 @@ export function canNavigateToStep(stepNum, state) {
     if (stepNum === 1) return true;
     if (stepNum === 2) return !!state.sessionId;
     if (stepNum === 3) return state.regions.length > 0;
-    if (stepNum === 4) return state.regions.length > 0;
+    if (stepNum === 4) return state.regions.length > 0 || !!state.detectedCircle;
     return false;
 }
 

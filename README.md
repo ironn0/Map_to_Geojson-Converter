@@ -168,6 +168,7 @@ For implementation details, see `src/tests/webapp_modular/README.md`.
 ## Features
 
 - **Web Interface**: Modern, responsive UI with step-by-step workflow.
+- **Guided Wizard UX**: Recommended next action, project history timeline, and clearer quality feedback for non-technical users.
 - **Image Conversion**: Extract polygons from map images using legacy or robust segmentation profiles.
 - **SVG Support**: Convert SVG paths to GeoJSON.
 - **Interactive Georeferencing**: Bounds-based conversion by default, optional GCP affine/homography, and opt-in `cv_auto` with confidence checks.
@@ -177,6 +178,7 @@ For implementation details, see `src/tests/webapp_modular/README.md`.
 - **Debug Visuals**: Segmented and region overlay images.
 - **Benchmark Harness**: KPI-based benchmark checks for precision/recall, spatial error, runtime, and legacy vs `cv_auto` georeferencing delta.
 - **State Consistency**: Geometry edits are synchronized to backend before export to avoid UI/output mismatch.
+- **Operational Reliability Scaffolding**: Background job queue with retry/timeout, job status API, and operational error dashboard endpoints.
 
 ---
 

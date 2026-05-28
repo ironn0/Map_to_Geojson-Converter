@@ -31,6 +31,8 @@ from routes import (
     billing_router,
     circle_router,
     export_router,
+    jobs_router,
+    ops_router,
     segmentation_router,
     upload_router,
     workspace_router,
@@ -62,6 +64,8 @@ app.include_router(segmentation_router)
 app.include_router(export_router)
 app.include_router(alignment_router)
 app.include_router(circle_router)
+app.include_router(jobs_router)
+app.include_router(ops_router)
 app.include_router(auth_router)
 app.include_router(workspace_router)
 app.include_router(billing_router)
