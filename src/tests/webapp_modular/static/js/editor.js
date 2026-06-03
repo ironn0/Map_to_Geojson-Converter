@@ -8,7 +8,6 @@
 import { state, resetEditorState } from './state.js';
 import { el } from './dom.js';
 import { toast, updateSelectionLabel } from './ui.js';
-import * as api from './api.js';
 
 /**
  * Imposta lo strumento corrente
@@ -48,10 +47,6 @@ export function setTool(tool) {
         }
     }
     
-    // If selecting edit tool, require a shape to be selected
-    if (tool === 'edit' && state.selectedRegionId !== null) {
-        startEditRegion(state.selectedRegionId);
-    }
 }
 
 /**
@@ -62,6 +57,7 @@ export function setTool(tool) {
 export function selectRegion(idx, renderPolygons) {
     const wasSelected = state.selectedRegionId === idx;
     state.selectedRegionId = idx;
+    state.selectedPointId = null;
     state.selectedVertexIndex = null;
     renderPolygons();
     updateSelectionLabel(state);
@@ -163,28 +159,10 @@ export function deleteSelectedVertex(renderPolygons) {
  */
 export async function savePolygonEdit(renderPolygons, updateRegionsList) {
     if (state.editingRegionId === null) return;
-    
-    const { showLoading, hideLoading } = await import('./ui.js');
-    
-    showLoading('Salvataggio...');
-    try {
-        const data = await api.updateRegion({
-            session_id: state.sessionId,
-            region_id: state.editingRegionId,
-            points: state.regions[state.editingRegionId].points
-        });
-        
-        if (data.success) {
-            state.regions = data.regions;
-            exitEditMode(renderPolygons);
-            if (updateRegionsList) updateRegionsList();
-            toast('Modifiche salvate!', 'success');
-        }
-    } catch (e) {
-        toast('Errore nel salvataggio: ' + e.message, 'error');
-    } finally {
-        hideLoading();
-    }
+
+    exitEditMode(renderPolygons);
+    if (updateRegionsList) updateRegionsList();
+    toast('Modifiche salvate localmente. Saranno incluse nel GeoJSON.', 'success');
 }
 
 /**
@@ -312,6 +290,8 @@ export function duplicateShape(renderPolygons, updateRegionsList) {
     
     const duplicate = {
         ...original,
+        id: state.regions.length,
+        clientSide: true,
         name: original.name + ' (copia)',
         points: original.points.map(p => [p[0] + offset, p[1] + offset])
     };
@@ -327,7 +307,20 @@ export function duplicateShape(renderPolygons, updateRegionsList) {
  * Elimina la forma selezionata
  * @param {Function} deleteRegionCallback - Callback per eliminazione
  */
-export function deleteSelectedShape(deleteRegionCallback) {
+export function deleteSelectedShape(deleteRegionCallback, renderPolygons, updateRegionsList) {
+    if (state.selectedPointId !== null) {
+        const idx = state.selectedPointId;
+        if (idx >= 0 && idx < state.points.length) {
+            state.points.splice(idx, 1);
+            state.points.forEach((point, i) => point.id = i);
+            state.selectedPointId = null;
+            if (renderPolygons) renderPolygons();
+            if (updateRegionsList) updateRegionsList();
+            toast('Punto eliminato', 'info');
+        }
+        return;
+    }
+
     if (state.selectedRegionId === null) {
         toast('Seleziona prima una forma', 'warning');
         return;

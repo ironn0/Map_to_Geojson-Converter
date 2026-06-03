@@ -56,6 +56,26 @@ async def segment_at_point(req: PointRequest):
     new_region = segmenter.segment_at_point(req.x, req.y)
     
     if new_region:
+        for existing in regions:
+            point_inside_existing = cv2.pointPolygonTest(
+                existing.contour.astype(np.float32),
+                (float(req.x), float(req.y)),
+                False
+            ) >= 0
+            centroid_inside_existing = cv2.pointPolygonTest(
+                existing.contour.astype(np.float32),
+                (float(new_region.centroid[0]), float(new_region.centroid[1])),
+                False
+            ) >= 0
+            if (
+                (point_inside_existing or centroid_inside_existing)
+                and existing.area > new_region.area * 1.25
+            ):
+                return {
+                    "success": False,
+                    "message": "Il punto e' gia' dentro una regione esistente. Selezionala o eliminala prima di risegmentare."
+                }
+
         regions.append(new_region)
         session["regions"] = regions
         

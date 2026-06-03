@@ -53,6 +53,8 @@ class ExportRequest(BaseModel):
     session_id: str
     bounds: GeoBounds
     region_names: Optional[Dict[int, str]] = None
+    regions: Optional[List[Dict]] = None
+    points: Optional[List[Dict]] = None
 
 
 class UpdateRegionRequest(BaseModel):
@@ -68,6 +70,7 @@ class AlignRequest(BaseModel):
     bounds: GeoBounds
     reference_geojson: Optional[Dict] = None
     snap_strength: float = 0.5
+    regions: Optional[List[Dict]] = None
 
 
 # ==================== Response Models ====================

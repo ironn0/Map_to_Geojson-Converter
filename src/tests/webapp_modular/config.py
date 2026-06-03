@@ -23,9 +23,9 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 # ==================== Image Settings ====================
 
-MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_IMAGE_SIZE = 25 * 1024 * 1024  # 25MB
 ALLOWED_CONTENT_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
-THUMBNAIL_MAX_DIM = 1200
+PROCESSING_MAX_DIM = 2400
 
 # ==================== Segmentation Defaults ====================
 
@@ -48,6 +48,6 @@ GEO_PRESETS = {
 # ==================== CORS Settings ====================
 
 CORS_ORIGINS = ["*"]
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 CORS_ALLOW_METHODS = ["*"]
 CORS_ALLOW_HEADERS = ["*"]

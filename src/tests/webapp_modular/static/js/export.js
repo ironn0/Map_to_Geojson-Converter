@@ -26,72 +26,24 @@ export async function generateGeoJSON() {
     }
     
     try {
-        let geojson = {
-            type: 'FeatureCollection',
-            properties: {
-                source: 'Map to GeoJSON Converter',
-                bounds: getBounds()
-            },
-            features: []
-        };
-        
-        const bounds = getBounds();
-        const backendRegions = state.regions.filter(r => !r.clientSide);
-        const clientRegions = state.regions.filter(r => r.clientSide);
-        
-        // Get backend regions if any
-        if (backendRegions.length > 0) {
-            const backendGeojson = await api.exportGeoJSON({ 
-                session_id: state.sessionId, 
-                bounds: bounds 
-            });
-            geojson.features = backendGeojson.features || [];
-        }
-        
-        // Add client-side drawn regions
-        clientRegions.forEach((region, idx) => {
-            const coords = region.points.map(p => {
-                const lng = bounds.west + (p[0] / state.imageWidth) * (bounds.east - bounds.west);
-                const lat = bounds.north - (p[1] / state.imageHeight) * (bounds.north - bounds.south);
-                return [lng, lat];
-            });
-            // Close the polygon
-            if (coords.length > 0) {
-                coords.push([...coords[0]]);
-            }
-            
-            geojson.features.push({
-                type: 'Feature',
-                properties: {
-                    name: region.name,
-                    type: 'drawn-polygon',
-                    color: region.color
-                },
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [coords]
-                }
-            });
+        const geojson = await api.exportGeoJSON({
+            session_id: state.sessionId,
+            bounds: getBounds(),
+            regions: state.regions.map((region, idx) => ({
+                id: region.id ?? idx,
+                name: region.name || `Regione ${idx + 1}`,
+                type: region.clientSide ? 'drawn-polygon' : 'area',
+                area: region.area ?? null,
+                color: region.color || '#3b82f6',
+                points: region.points || []
+            })),
+            points: state.points.map((point, idx) => ({
+                id: point.id ?? idx,
+                name: point.name || `Punto ${idx + 1}`,
+                x: point.x,
+                y: point.y
+            }))
         });
-        
-        // Add client-side points
-        state.points.forEach(point => {
-            const lng = bounds.west + (point.x / state.imageWidth) * (bounds.east - bounds.west);
-            const lat = bounds.north - (point.y / state.imageHeight) * (bounds.north - bounds.south);
-            
-            geojson.features.push({
-                type: 'Feature',
-                properties: {
-                    name: point.name,
-                    type: 'point'
-                },
-                geometry: {
-                    type: 'Point',
-                    coordinates: [lng, lat]
-                }
-            });
-        });
-        
         state.geojsonData = geojson;
         return state.geojsonData;
     } catch (e) {
@@ -127,7 +79,7 @@ export async function previewGeoJSON() {
  * Copia GeoJSON negli appunti
  */
 export async function copyGeoJSON() {
-    const geojson = state.geojsonData || await generateGeoJSON();
+    const geojson = await generateGeoJSON();
     if (geojson) { 
         navigator.clipboard.writeText(JSON.stringify(geojson, null, 2)); 
         toast('GeoJSON copiato negli appunti!', 'success'); 

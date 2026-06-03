@@ -9,6 +9,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 import cv2
 import json
 import numpy as np
+from typing import Optional
 
 from models import AlignRequest
 from georeferencing import Georeferencer, TerritoryAligner
@@ -16,6 +17,42 @@ from utils import image_to_base64, region_to_dict
 from session_manager import sessions
 
 router = APIRouter(prefix="/api", tags=["alignment"])
+
+
+def _region_dict_to_feature(region: dict, idx: int, georef: Georeferencer) -> Optional[dict]:
+    points = region.get("points") or []
+    if len(points) < 3:
+        return None
+    coords = [list(georef.pixel_to_coord(float(p[0]), float(p[1]))) for p in points]
+    if coords and coords[0] != coords[-1]:
+        coords.append(coords[0])
+    return {
+        "type": "Feature",
+        "properties": {
+            "id": region.get("id", idx),
+            "name": region.get("name") or f"Regione {idx + 1}",
+            "color": region.get("color", "#3b82f6"),
+            "type": region.get("type", "area")
+        },
+        "geometry": {"type": "Polygon", "coordinates": [coords]}
+    }
+
+
+def _feature_to_region_dict(feature: dict, idx: int, georef: Georeferencer) -> dict:
+    coords = feature.get("geometry", {}).get("coordinates", [[]])[0]
+    points = []
+    for lon, lat in coords[:-1] if len(coords) > 1 else coords:
+        px = (lon - georef.west) / georef.lon_per_pixel
+        py = (georef.north - lat) / georef.lat_per_pixel
+        points.append([px, py])
+    props = feature.get("properties", {})
+    return {
+        "id": props.get("id", idx),
+        "name": props.get("name") or f"Regione {idx + 1}",
+        "color": props.get("color", "#3b82f6"),
+        "points": points,
+        "clientSide": True
+    }
 
 
 @router.post("/align")
@@ -31,7 +68,7 @@ async def align_territories(req: AlignRequest):
     session = sessions[req.session_id]
     regions = session["regions"]
     
-    if not regions:
+    if not regions and not req.regions:
         raise HTTPException(400, "Nessuna regione da allineare")
     
     # Crea georeferencer per convertire pixel -> coordinate
@@ -41,20 +78,40 @@ async def align_territories(req: AlignRequest):
         req.bounds.model_dump()
     )
     
-    # Converti regioni in GeoJSON features
     features = []
-    for i, region in enumerate(regions):
-        coords = georef.contour_to_coords(region.contour)
-        features.append({
-            "type": "Feature",
-            "properties": {"id": i, "name": region.name or f"Regione {i + 1}"},
-            "geometry": {"type": "Polygon", "coordinates": [coords]}
-        })
+    if req.regions is not None:
+        for i, region in enumerate(req.regions):
+            feature = _region_dict_to_feature(region, i, georef)
+            if feature:
+                features.append(feature)
+    else:
+        for i, region in enumerate(regions):
+            coords = georef.contour_to_coords(region.contour)
+            features.append({
+                "type": "Feature",
+                "properties": {
+                    "id": i,
+                    "name": region.name or f"Regione {i + 1}",
+                    "color": f"#{region.color[2]:02x}{region.color[1]:02x}{region.color[0]:02x}"
+                },
+                "geometry": {"type": "Polygon", "coordinates": [coords]}
+            })
     
     # Se c'è un GeoJSON di riferimento, usa TerritoryAligner
     if req.reference_geojson:
         aligner = TerritoryAligner(req.reference_geojson)
         aligned_features = aligner.align_all(features, req.snap_strength)
+
+        if req.regions is not None:
+            return {
+                "success": True,
+                "message": f"Allineate {len(aligned_features)} regioni al riferimento",
+                "regions": [_feature_to_region_dict(feat, i, georef) for i, feat in enumerate(aligned_features)],
+                "aligned_geojson": {
+                    "type": "FeatureCollection",
+                    "features": aligned_features
+                }
+            }
         
         # Converti coordinate allineate in pixel e aggiorna le regioni
         for i, (feat, region) in enumerate(zip(aligned_features, regions)):
@@ -100,7 +157,7 @@ async def align_territories(req: AlignRequest):
     return {
         "success": True,
         "message": "Regioni convertite (nessun riferimento per allineamento)",
-        "regions": [region_to_dict(r, i) for i, r in enumerate(regions)],
+        "regions": req.regions if req.regions is not None else [region_to_dict(r, i) for i, r in enumerate(regions)],
         "geojson": {
             "type": "FeatureCollection", 
             "features": features

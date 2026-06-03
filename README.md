@@ -12,14 +12,14 @@
 </p>
 
 <p align="center">
-  A free, open-source tool to convert map images (PNG, JPG) and SVG files into GeoJSON format, using AI and computer vision. Born as an alternative to expensive databases like Geochron (500€), enabling accessible geospatial data creation.
+  A free, open-source tool to digitize map images (PNG, JPG, WebP) into editable, georeferenced GeoJSON using computer vision plus manual tracing.
 </p>
 
 ---
 
 ## Table of Contents
 - [Highlights](#highlights)
-- [Web App (New!)](#-web-app-new)
+- [Web App](#web-app)
 - [Background](#background)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
@@ -35,8 +35,8 @@
 
 ## Highlights
 - 🆓 **Free & Open-Source**: No costs, ideal for students and researchers.
-- � **Web Interface**: Modern browser-based app with interactive georeferencing.
-- 🎨 **AI-Powered**: Uses K-Means segmentation and edge detection for automatic polygon extraction.
+- **Web Interface**: Modern browser-based app with interactive georeferencing.
+- 🎨 **Assisted Extraction**: Uses K-Means segmentation and edge detection for automatic polygon extraction.
 - 🗺️ **Multiple Inputs**: Supports images (PNG, JPG, WebP) and SVG files.
 - 📦 **GeoJSON Export**: Outputs standard GeoJSON FeatureCollection.
 - 🔄 **Real-time Preview**: See your regions on a real map before exporting.
@@ -44,7 +44,7 @@
 ---
 
 ## Background
-This project was created by students to provide free access to geospatial data. Commercial services charge money for databases, making them inaccessible for educational projects. Our tool leverages open-source libraries (OpenCV, GDAL, PyTorch) to convert simple map images into usable GeoJSON files.
+This project was created by students to provide free access to geospatial data. Commercial services charge money for databases, making them inaccessible for educational projects. The modular web app uses OpenCV and a browser editor to convert simple map images into usable GeoJSON files.
 
 ### 🎯 What It Does
 
@@ -58,28 +58,37 @@ The tool extracts colored regions, identifies boundaries, and generates GeoJSON 
 
 ---
 
-## 🌐 Web App (New!)
+## Web App
 
-The latest version includes a **full-featured web interface** for easy map conversion:
+The modular web app is designed as a practical image-to-GeoJSON digitizing tool: upload a map, trace or auto-detect areas, edit vertices by hand, add points of interest, georeference the result, and export a GeoJSON that matches the visible edits.
 
 | Input: Historical Map | Output: Georeferenced GeoJSON |
 |----------------------|-------------------------------|
 | ![Input](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/img_raw_webapp.png) | ![Output](https://raw.githubusercontent.com/ironn0/ironn0/main/assets/Map_to_Geojson/img_result_geojson.png) |
 
 ### Key Features
-- 🖼️ **Drag & Drop Upload**: Simply drop your map image
-- 🎯 **Interactive Segmentation**: Adjust colors and sensitivity in real-time
-- 🗺️ **Visual Georeferencing**: Drag corners on a real map to align your image
-- ✏️ **Polygon Editor**: Edit, merge, split, and rename regions
-- 💾 **One-Click Export**: Download GeoJSON ready for GIS software
+- **Map image tracing**: Use scanned maps, technical drawings, thematic maps, or influence-area images as a digitizing base.
+- **Assisted segmentation**: Extract colored regions with K-Means and refine them manually.
+- **Manual editing**: Draw polygons, move/scale/simplify/smooth shapes, edit vertices, duplicate, delete, and rename areas.
+- **Points of interest**: Add, drag, rename, delete, and export POIs together with areas.
+- **Georeferenced export**: Export a GeoJSON FeatureCollection using the bounds you set in the app.
 
 ### Quick Start (Web App)
 ```bash
-cd src/tests/webapp_modular
-pip install -r requirements.txt
-uvicorn main:app --reload
+python3 -m venv .venv
+.venv/bin/python -m pip install -r src/tests/webapp_modular/requirements.txt
+src/tests/webapp_modular/run_local.sh
 ```
 Open http://localhost:8000 in your browser.
+
+For the home server/ngrok deployment use:
+
+```bash
+cd src/tests/webapp_modular
+./start.sh
+```
+
+Default public URL: `https://cider-esquire-tinkling.ngrok-free.dev/`.
 
 ---
 
@@ -106,7 +115,7 @@ git clone https://github.com/ironn0/Map_to_Geojson-Converter.git
 cd Map_to_Geojson-Converter
 
 # Create virtual environment, install deps, and run
-python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt && cd src/tests/webapp_modular && uvicorn main:app --reload
+python -m venv .venv && .venv\Scripts\activate && pip install -r src\tests\webapp_modular\requirements.txt && cd src\tests\webapp_modular && uvicorn main:app --reload
 ```
 
 ### Step-by-Step Installation
@@ -115,26 +124,35 @@ python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.tx
 git clone https://github.com/ironn0/Map_to_Geojson-Converter.git
 cd Map_to_Geojson-Converter
 
-# 2. Create virtual environment
-python -m venv .venv
+# 2. Create virtual environment 
+#Windows
+python3 -m venv .venv
+#Linux
+ apt install python3.12-venv
+
 
 # 3. Activate virtual environment
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # Linux/Mac
+.venv\Scripts\Activate.ps1   # Windows (PowerShell)
+.venv\Scripts\activate       # Windows (cmd.exe)
+# Linux / macOS (bash, zsh)
+source .venv/bin/activate
+# Fish shell
+source .venv/bin/activate.fish
+# To deactivate the virtual environment
+deactivate
 
 # 4. Install dependencies
-pip install -r requirements.txt
+pip install -r src/tests/webapp_modular/requirements.txt
 
 # 5. Run the web app
-cd src/tests/webapp_modular
-uvicorn main:app --reload
+src/tests/webapp_modular/run_local.sh
 ```
 
 Then open **http://localhost:8000** in your browser.
 
 ### Run CLI Scripts (Alternative)
 ```bash
-# Image to GeoJSON with AI
+# Image to GeoJSON command-line prototype
 python "src/tests/test SAM/map_to_geojson.py"
 
 # SVG to GeoJSON
@@ -147,7 +165,7 @@ python "src/test svg to geojson/Svg_to_Geojson_Converter.py"
 1. Prepare your map image or SVG file.
 2. Run the appropriate script.
 3. Choose calibration (Italy preset or manual).
-4. Outputs: GeoJSON file and debug images.
+4. Outputs: GeoJSON file with polygons and points of interest.
 
 For detailed pipeline, see `src/test con ai/pipeline.md`.
 
@@ -158,15 +176,16 @@ For detailed pipeline, see `src/test con ai/pipeline.md`.
 - **Image Conversion**: Extract polygons from map images using K-Means segmentation and edge detection.
 - **SVG Support**: Convert SVG paths to GeoJSON.
 - **Interactive Georeferencing**: Visual corner-dragging on Leaflet map for precise alignment.
-- **Polygon Editor**: Select, edit vertices, merge, split, duplicate, rename regions.
-- **Manual Drawing**: Add custom polygons and points directly.
-- **Real-time Preview**: See regions on actual geographic map before export.
-- **Debug Visuals**: Segmented and region overlay images.
+- **Polygon Editor**: Select, edit vertices, move, scale, simplify, smooth, duplicate, delete, and rename regions.
+- **Manual Drawing**: Add custom polygons and draggable points of interest directly.
+- **Consistent Export**: Manual edits and POIs are included in the exported GeoJSON.
+- **Geographic Bounds**: Use presets or custom north/south/east/west bounds.
 
 ---
 
 ## Algorithm Overview
-- **Preprocessing**: Image segmentation with K-Means or AI models.
+- **Preprocessing**: Image resizing for consistent canvas/export coordinates.
+- **Segmentation**: K-Means color clustering plus edge detection.
 - **Contour Detection**: Use OpenCV to find shapes.
 - **Filtering**: Remove noise, water, etc., based on heuristics.
 - **Georeferencing**: Map pixels to coordinates.
@@ -177,8 +196,8 @@ See `src/test con ai/pipeline.md` for full architecture.
 ---
 
 ## Outputs
-- **GeoJSON File**: FeatureCollection with polygons.
-- **Debug Images**: `_segmented.png` (clusters), `_regions.png` (polygons).
+- **GeoJSON File**: FeatureCollection with polygons and points of interest.
+- **Properties**: Feature name, type, color, id, pixel area when available, bounds metadata.
 - Visualize at https://geojson.io.
 
 ---

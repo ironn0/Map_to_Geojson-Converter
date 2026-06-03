@@ -294,7 +294,14 @@ export async function alignToTerritories(displayImage, updateRegionsList) {
         const requestBody = {
             session_id: state.sessionId,
             bounds: getBounds(),
-            snap_strength: parseFloat(el.snapStrength.value)
+            snap_strength: parseFloat(el.snapStrength.value),
+            regions: state.regions.map((region, idx) => ({
+                id: region.id ?? idx,
+                name: region.name || `Regione ${idx + 1}`,
+                color: region.color || '#3b82f6',
+                type: region.clientSide ? 'drawn-polygon' : 'area',
+                points: region.points || []
+            }))
         };
         
         if (state.referenceGeojson) {
@@ -307,8 +314,8 @@ export async function alignToTerritories(displayImage, updateRegionsList) {
             state.regions = data.regions;
             if (updateRegionsList) updateRegionsList();
             
-            if (data.visualization && displayImage) {
-                displayImage('data:image/png;base64,' + data.visualization);
+            if (displayImage) {
+                displayImage(state.imageBase64);
             }
             
             if (data.aligned_geojson) {

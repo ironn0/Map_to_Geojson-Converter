@@ -9,6 +9,7 @@ import cv2
 import base64
 import numpy as np
 from typing import Dict
+from pathlib import Path
 from models import ExtractedRegion
 
 
@@ -47,6 +48,13 @@ def resize_image(image: np.ndarray, max_dim: int = 1200) -> np.ndarray:
         scale = max_dim / max(width, height)
         return cv2.resize(image, None, fx=scale, fy=scale)
     return image
+
+
+def safe_filename(filename: str) -> str:
+    """Restituisce un nome file semplice e sicuro per i file temporanei."""
+    name = Path(filename or "map.png").name
+    cleaned = "".join(c if c.isalnum() or c in "._-" else "_" for c in name)
+    return cleaned[:120] or "map.png"
 
 
 def validate_bounds(bounds: Dict) -> bool:

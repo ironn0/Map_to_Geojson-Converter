@@ -134,7 +134,7 @@ function setupEventListeners() {
     el.simplifyBtn?.addEventListener('click', () => simplifyShape(renderPolygons, updateRegionsList));
     el.smoothBtn?.addEventListener('click', () => smoothShape(renderPolygons, updateRegionsList));
     el.duplicateBtn?.addEventListener('click', () => duplicateShape(renderPolygons, updateRegionsList));
-    el.deleteShapeBtn?.addEventListener('click', () => deleteSelectedShape(deleteRegion));
+    el.deleteShapeBtn?.addEventListener('click', () => deleteSelectedShape(deleteRegion, renderPolygons, updateRegionsList));
     
     // Context menu
     document.addEventListener('contextmenu', handleContextMenu);
@@ -146,7 +146,7 @@ function setupEventListeners() {
     document.getElementById('ctx-duplicate')?.addEventListener('click', () => { hideContextMenu(); duplicateShape(renderPolygons, updateRegionsList); });
     document.getElementById('ctx-simplify')?.addEventListener('click', () => { hideContextMenu(); simplifyShape(renderPolygons, updateRegionsList); });
     document.getElementById('ctx-smooth')?.addEventListener('click', () => { hideContextMenu(); smoothShape(renderPolygons, updateRegionsList); });
-    document.getElementById('ctx-delete')?.addEventListener('click', () => { hideContextMenu(); deleteSelectedShape(deleteRegion); });
+    document.getElementById('ctx-delete')?.addEventListener('click', () => { hideContextMenu(); deleteSelectedShape(deleteRegion, renderPolygons, updateRegionsList); });
     document.getElementById('ctx-rename')?.addEventListener('click', () => { hideContextMenu(); openRenameModal(); });
     
     // Draw tools
@@ -208,7 +208,7 @@ function setupKeyboardShortcuts() {
                 if (state.selectedVertexIndex !== null && state.editingRegionId !== null) {
                     deleteSelectedVertex(renderPolygons);
                 } else if (state.selectedRegionId !== null) {
-                    deleteSelectedShape(deleteRegion);
+                    deleteSelectedShape(deleteRegion, renderPolygons, updateRegionsList);
                 }
                 break;
             case 'escape':
@@ -310,7 +310,8 @@ async function runSegmentation() {
         });
         
         state.regions = data.regions;
-        displayImage(data.visualization);
+        state.segmentVisualization = data.visualization;
+        displayImage(state.imageBase64);
         renderPolygons();
         updateRegionsList();
         
@@ -344,14 +345,26 @@ async function handleCanvasClick(e) {
     const rect = el.canvas.getBoundingClientRect();
     const x = Math.round((e.clientX - rect.left) / state.canvasScale);
     const y = Math.round((e.clientY - rect.top) / state.canvasScale);
+
+    const existingRegionId = findRegionContainingPoint(x, y);
+    if (existingRegionId !== null) {
+        selectRegion(existingRegionId, renderPolygons);
+        toast('Il punto e\' gia\' dentro una regione esistente. Eliminala prima di risegmentare.', 'info');
+        return;
+    }
     
     showLoading('Rilevamento regione...');
     try {
         const data = await api.segmentAtPoint({ session_id: state.sessionId, x, y });
         
         if (data.success) {
-            state.regions = data.regions;
-            displayImage(data.visualization);
+            const newRegion = data.regions[data.regions.length - 1];
+            if (newRegion) {
+                newRegion.id = state.regions.length;
+                state.regions.push(newRegion);
+            }
+            state.segmentVisualization = data.visualization;
+            displayImage(state.imageBase64);
             renderPolygons();
             updateRegionsList();
             toast('Regione aggiunta!', 'success');
@@ -373,8 +386,32 @@ function handleCanvasMove(e) {
     el.cursorInfo.textContent = `x: ${x}, y: ${y}`;
 }
 
+function findRegionContainingPoint(x, y) {
+    for (let i = state.regions.length - 1; i >= 0; i--) {
+        const region = state.regions[i];
+        if (region.points && pointInPolygon([x, y], region.points)) {
+            return i;
+        }
+    }
+    return null;
+}
+
+function pointInPolygon(point, polygon) {
+    let inside = false;
+    const [x, y] = point;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i][0], yi = polygon[i][1];
+        const xj = polygon[j][0], yj = polygon[j][1];
+        const intersects = ((yi > y) !== (yj > y)) &&
+            (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-9) + xi);
+        if (intersects) inside = !inside;
+    }
+    return inside;
+}
+
 // ==================== Polygon Rendering ====================
 function renderPolygons() {
+    state.geojsonData = null;
     el.polygonEditor.innerHTML = '';
     
     if (state.regions.length > 0) {
@@ -407,6 +444,10 @@ function renderPolygons() {
         
         polygon.onclick = e => { 
             e.stopPropagation(); 
+            if (state.isDrawing || state.currentTool === 'draw-point') {
+                handleDrawClick(e, renderPolygons, openRenameModal);
+                return;
+            }
             if (state.editingRegionId === null) {
                 selectRegion(idx, renderPolygons); 
             }
@@ -417,6 +458,7 @@ function renderPolygons() {
         };
         polygon.onmousedown = e => {
             if (e.button !== 0) return;
+            if (state.isDrawing || state.currentTool === 'draw-point') return;
             
             if (state.currentTool === 'move') {
                 e.stopPropagation();
@@ -456,10 +498,22 @@ function renderPolygons() {
         
         circle.onclick = e => {
             e.stopPropagation();
+            if (state.isDrawing || state.currentTool === 'draw-point') {
+                handleDrawClick(e, renderPolygons, openRenameModal);
+                return;
+            }
             state.selectedPointId = idx;
             state.selectedRegionId = null;
             updateSelectionLabel(state);
             renderPolygons();
+        };
+        circle.onmousedown = e => {
+            if (e.button !== 0) return;
+            if (state.isDrawing || state.currentTool === 'draw-point') return;
+            e.stopPropagation();
+            state.selectedPointId = idx;
+            state.selectedRegionId = null;
+            startDragPoint(idx);
         };
         
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -556,6 +610,26 @@ function startDragVertex(regionIdx, vertexIdx) {
     document.addEventListener('mouseup', onUp);
 }
 
+function startDragPoint(pointIdx) {
+    const point = state.points[pointIdx];
+    if (!point) return;
+    
+    const onMove = e => {
+        const rect = el.polygonEditor.getBoundingClientRect();
+        point.x = Math.max(0, Math.min(state.imageWidth, (e.clientX - rect.left) / state.canvasScale));
+        point.y = Math.max(0, Math.min(state.imageHeight, (e.clientY - rect.top) / state.canvasScale));
+        renderPolygons();
+    };
+    
+    const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+    };
+    
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+}
+
 // ==================== Regions List ====================
 function updateRegionsList() {
     if (el.alignBtn) el.alignBtn.disabled = state.regions.length === 0;
@@ -564,20 +638,13 @@ function updateRegionsList() {
 async function deleteRegion(id) {
     if (!state.sessionId) return;
     if (state.editingRegionId === id) exitEditMode(renderPolygons);
-    
-    try {
-        const data = await api.deleteRegion(id, state.sessionId);
-        if (data.success) {
-            state.regions = data.regions;
-            state.selectedRegionId = null;
-            displayImage(data.visualization);
-            renderPolygons();
-            updateRegionsList();
-            toast('Regione eliminata', 'info');
-        }
-    } catch (e) {
-        toast('Errore: ' + e.message, 'error');
-    }
+
+    state.regions.splice(id, 1);
+    state.regions.forEach((region, idx) => region.id = idx);
+    state.selectedRegionId = null;
+    renderPolygons();
+    updateRegionsList();
+    toast('Regione eliminata', 'info');
 }
 
 // ==================== Context Menu ====================
@@ -595,4 +662,4 @@ window.setTool = setTool;
 window.simplifyShape = () => simplifyShape(renderPolygons, updateRegionsList);
 window.smoothShape = () => smoothShape(renderPolygons, updateRegionsList);
 window.duplicateShape = () => duplicateShape(renderPolygons, updateRegionsList);
-window.deleteSelectedShape = () => deleteSelectedShape(deleteRegion);
+window.deleteSelectedShape = () => deleteSelectedShape(deleteRegion, renderPolygons, updateRegionsList);

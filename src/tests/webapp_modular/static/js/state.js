@@ -17,6 +17,7 @@ export const state = {
     geojsonData: null,
     presets: {},
     imageBase64: null,
+    segmentVisualization: null,
     currentStep: 1,
     
     // Editor
@@ -54,6 +55,7 @@ export function resetState() {
     state.clickMode = false;
     state.geojsonData = null;
     state.imageBase64 = null;
+    state.segmentVisualization = null;
     state.currentStep = 1;
     state.selectedRegionId = null;
     state.selectedPointId = null;

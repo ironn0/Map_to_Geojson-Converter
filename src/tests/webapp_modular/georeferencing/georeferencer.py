@@ -23,7 +23,7 @@ class Georeferencer:
         self.lon_per_pixel = (self.east - self.west) / self.width
         self.lat_per_pixel = (self.north - self.south) / self.height
     
-    def pixel_to_coord(self, x: int, y: int) -> Tuple[float, float]:
+    def pixel_to_coord(self, x: float, y: float) -> Tuple[float, float]:
         """Converte coordinate pixel in longitudine/latitudine"""
         lon = self.west + (x * self.lon_per_pixel)
         lat = self.north - (y * self.lat_per_pixel)
@@ -38,7 +38,7 @@ class Georeferencer:
     def contour_to_coords(self, contour: np.ndarray) -> List[List[float]]:
         """Converte un contorno di pixel in coordinate geografiche"""
         points = contour.reshape(-1, 2) if len(contour.shape) == 3 else contour
-        coords = [list(self.pixel_to_coord(int(x), int(y))) for x, y in points]
+        coords = [list(self.pixel_to_coord(float(x), float(y))) for x, y in points]
         # Chiudi il poligono
         if coords and coords[0] != coords[-1]:
             coords.append(coords[0])
