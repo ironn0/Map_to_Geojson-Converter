@@ -1,6 +1,6 @@
 # Map to GeoJSON Converter
 
-A free, open-source tool to convert map images (PNG, JPG) and SVG files into GeoJSON format, using AI and computer vision. Born as an alternative to expensive databases like Geochron (500€), enabling accessible geospatial data creation.
+Convert scanned maps and raster images into valid GeoJSON, with assisted georeferencing and export guardrails designed to work cleanly in tools like geojson.io.
 
 ---
 
@@ -30,6 +30,14 @@ A free, open-source tool to convert map images (PNG, JPG) and SVG files into Geo
 - 🗺️ **Multiple Inputs**: Supports images (PNG, JPG, WebP) and SVG files.
 - 📦 **GeoJSON Export**: Outputs standard GeoJSON FeatureCollection with optional geometry sanitization.
 - 🔄 **Real-time Preview**: See your regions on a real map before exporting.
+
+### Why teams use this project
+
+- Handles difficult map inputs (historical scans, noisy borders, skewed pages) with robust segmentation options.
+- Provides guided georeferencing, including optional CV-assisted registration (`cv_auto`) with fallback metadata.
+- Includes circle detection + georeferencing workflow when the map uses circular boundaries.
+- Enforces export validity with coordinate normalization and JSON numeric sanitization.
+- Ships with automated quality gates (`pytest` + benchmark thresholds) to reduce regressions.
 
 ---
 
@@ -69,6 +77,14 @@ The latest version includes a **full-featured web interface** for easy map conve
 - 📍 **Advanced Georeferencing (opt-in)**: GCP affine/homography + CV semi-automatic registration (`cv_auto`) with confidence/fallback
 - ✏️ **Polygon Editor**: Edit, merge, split, and rename regions
 - 💾 **One-Click Export**: Download GeoJSON ready for GIS software
+
+### Quick Demo Flow
+
+1. Upload map image
+2. Run segmentation (or click-to-add regions)
+3. Georeference (manual bounds or `cv_auto`)
+4. Optional: detect and export circle-only geometry
+5. Export GeoJSON and open in geojson.io
 
 ### Repository Layout (Current)
 
@@ -145,6 +161,16 @@ uvicorn main:app --reload
 
 Then open **[http://localhost:8000](http://localhost:8000)** in your browser.
 
+### Trust & Quality Checks
+
+Run the full verification pipeline before releases:
+
+```bash
+python scripts/verify.py
+```
+
+This runs lint, test suite, and benchmark thresholds.
+
 ### Run CLI Scripts (Alternative)
 
 ```bash
@@ -179,6 +205,7 @@ For implementation details, see `src/tests/webapp_modular/README.md`.
 - **Benchmark Harness**: KPI-based benchmark checks for precision/recall, spatial error, runtime, and legacy vs `cv_auto` georeferencing delta.
 - **State Consistency**: Geometry edits are synchronized to backend before export to avoid UI/output mismatch.
 - **Operational Reliability Scaffolding**: Background job queue with retry/timeout, job status API, and operational error dashboard endpoints.
+- **GeoJSON Validity Guardrails**: Coordinate clamping and JSON numeric sanitization to prevent invalid lat/lon payloads.
 
 ---
 
@@ -209,6 +236,7 @@ See `src/tests/webapp_modular/README.md` for module-level architecture.
 - **GeoJSON File**: FeatureCollection with polygons.
 - **Debug Images**: `_segmented.png` (clusters), `_regions.png` (polygons).
 - Visualize at [https://geojson.io](https://geojson.io).
+- Export payload includes quality metadata (`georeferencing`, `geometry_sanitize`, `circle_only_mode`) for easier triage.
 
 ---
 
@@ -217,7 +245,7 @@ See `src/tests/webapp_modular/README.md` for module-level architecture.
 - Works best on maps with distinct colored regions.
 - Complex historical maps may need manual polygon editing.
 - ✅ ~~Web interface~~ - **Completed!**
-- Future: Batch processing, AI-assisted labeling, territory alignment with official borders.
+- Next focus: stronger georeferencing UX, production auth/billing persistence, and larger benchmark datasets.
 
 See `docs/feasibility/README.md` for the feasibility study.
 

@@ -1,0 +1,89 @@
+name: Georef / GeoJSON validity issue
+description: Report georeferencing drift or invalid GeoJSON output (geojson.io, Leaflet, Mapbox)
+title: "[Georef/GeoJSON]: "
+labels:
+  - type:bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when:
+        - regions are shifted after georeferencing,
+        - geojson.io rejects the exported file,
+        - coordinates look invalid or out of expected map area.
+
+        Note: `Area` and `Priority` fields are metadata. Apply matching `area:*` and `prio:*` labels manually.
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue type
+      options:
+        - Invalid GeoJSON (parse/render error)
+        - Georeferencing drift / wrong placement
+        - Circle detection export mismatch
+    validations:
+      required: true
+  - type: input
+    id: summary
+    attributes:
+      label: Short summary
+      placeholder: geojson.io rejects file with Invalid LngLat latitude
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Upload file ...
+        2. Run segmentation with ...
+        3. Click "Posiziona su Mappa" and resize ...
+        4. Export and open in geojson.io ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs actual
+      placeholder: |
+        Expected: GeoJSON opens correctly and aligns with map.
+        Actual: geojson.io throws Invalid LngLat latitude.
+    validations:
+      required: true
+  - type: textarea
+    id: input_details
+    attributes:
+      label: Input map and settings
+      description: Include image type, bounds, cv_auto settings, circle-only mode, etc.
+      placeholder: |
+        - Input file: historical_map_1880.jpg
+        - Bounds: north/south/east/west
+        - cv_auto: enabled/disabled
+        - Circle-only mode: true/false
+    validations:
+      required: true
+  - type: textarea
+    id: sample_data
+    attributes:
+      label: Sample failing payload
+      description: Paste a small geometry snippet or attach the exported GeoJSON file.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area:backend
+        - area:frontend
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - prio:P0
+        - prio:P1
+        - prio:P2
+      default: 1
+    validations:
+      required: true
