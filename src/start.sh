@@ -126,7 +126,9 @@ fi
 echo "Avvio tunnel ngrok..."
 
 if [[ -n "$NGROK_DOMAIN" ]]; then
-    ngrok http --domain="$NGROK_DOMAIN" "http://$HOST:$PORT"
+    # ngrok V3: usa --url per dominio riservato
+    ngrok http --url="https://$NGROK_DOMAIN" "$PORT"
 else
-    ngrok http "http://$HOST:$PORT"
+    # ngrok V3: dominio casuale
+    ngrok http "$PORT"
 fi
