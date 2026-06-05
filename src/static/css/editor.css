@@ -1,0 +1,595 @@
+/**
+ * ✏️ Editor & Toolbar Styles
+ * Polygon editor SVG, toolbar, vertices, drawing preview
+ */
+
+/* Polygon Editor SVG Overlay */
+#polygon-editor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#polygon-editor .polygon-path {
+    fill: rgba(99, 102, 241, 0.15);
+    stroke: var(--primary);
+    stroke-width: 2;
+    cursor: pointer;
+    pointer-events: all;
+    transition: fill 0.15s ease;
+}
+
+#polygon-editor .polygon-path:hover {
+    fill: rgba(99, 102, 241, 0.3);
+}
+
+#polygon-editor .polygon-path.selected {
+    fill: rgba(99, 102, 241, 0.4);
+    stroke-width: 3;
+    stroke: var(--primary);
+}
+
+#polygon-editor.eraser-active .polygon-path,
+#polygon-editor.eraser-active .vertex,
+#polygon-editor.eraser-active .midpoint,
+#polygon-editor.eraser-active .map-point {
+    pointer-events: none;
+}
+
+/* Vertices */
+#polygon-editor .vertex {
+    fill: var(--primary);
+    stroke: white;
+    stroke-width: 2;
+    cursor: move;
+    pointer-events: all;
+    transition: fill 0.1s ease, stroke-width 0.1s ease;
+}
+
+#polygon-editor .vertex:hover {
+    fill: var(--primary-dark);
+    stroke-width: 3;
+}
+
+#polygon-editor .vertex.selected {
+    fill: var(--warning);
+    stroke-width: 3;
+}
+
+/* Midpoints for adding vertices */
+#polygon-editor .midpoint {
+    fill: var(--bg-tertiary);
+    stroke: var(--primary);
+    stroke-width: 1.5;
+    cursor: pointer;
+    pointer-events: all;
+    opacity: 0.6;
+    transition: opacity 0.15s ease, fill 0.15s ease, stroke-width 0.15s ease;
+}
+
+#polygon-editor .midpoint:hover {
+    opacity: 1;
+    fill: var(--primary);
+    stroke: white;
+    stroke-width: 2.5;
+}
+
+/* Points */
+#polygon-editor .map-point {
+    fill: var(--warning);
+    stroke: white;
+    stroke-width: 2;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+#polygon-editor .map-point:hover {
+    fill: #fbbf24;
+}
+
+#polygon-editor .map-point.selected {
+    fill: #f97316;
+    stroke-width: 3;
+}
+
+#polygon-editor .point-label {
+    fill: white;
+    font-size: 11px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    pointer-events: none;
+}
+
+/* Drawing preview */
+#polygon-editor .drawing-preview .drawing-line {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 2;
+    stroke-dasharray: 6 3;
+}
+
+#polygon-editor .drawing-preview .drawing-vertex {
+    fill: var(--success);
+    stroke: white;
+    stroke-width: 2;
+}
+
+#polygon-editor .eraser-preview {
+    pointer-events: none;
+}
+
+#polygon-editor .eraser-stroke {
+    fill: none;
+    stroke: rgba(248, 113, 113, 0.35);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+#polygon-editor .eraser-dot {
+    fill: rgba(248, 113, 113, 0.35);
+}
+
+#polygon-editor .eraser-cursor {
+    fill: rgba(225, 29, 72, 0.72);
+    stroke: rgba(255, 255, 255, 0.9);
+    stroke-width: 2;
+}
+
+#polygon-editor .eraser-preview.mode-restore .eraser-stroke {
+    stroke: rgba(37, 99, 235, 0.35);
+}
+
+#polygon-editor .eraser-preview.mode-restore .eraser-dot {
+    fill: rgba(37, 99, 235, 0.35);
+}
+
+#polygon-editor .eraser-preview.mode-restore .eraser-cursor {
+    fill: rgba(37, 99, 235, 0.72);
+}
+
+#polygon-editor .transform-guide {
+    pointer-events: all;
+}
+
+#polygon-editor .transform-guide rect {
+    fill: rgba(255, 255, 255, 0.001);
+    stroke: #0f6bdd;
+    stroke-width: 2;
+    stroke-dasharray: 8 5;
+    cursor: move;
+}
+
+#polygon-editor .transform-guide.mode-scale rect {
+    stroke: #7c3aed;
+    cursor: nwse-resize;
+}
+
+#polygon-editor .transform-handle {
+    fill: #fff;
+    stroke: currentColor;
+    stroke-width: 2;
+    color: #0f6bdd;
+    cursor: move;
+    pointer-events: all;
+}
+
+#polygon-editor .transform-guide.mode-scale .transform-handle {
+    color: #7c3aed;
+    cursor: nwse-resize;
+}
+
+/* Editor toolbar */
+#editor-toolbar {
+    position: fixed;
+    top: 88px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 8px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    z-index: 80;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+    max-width: calc(100vw - 32px);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+body.image-edit-mode #editor-toolbar {
+    top: 88px;
+}
+
+body.image-edit-mode #editor-toolbar .toolbar-group {
+    background: transparent;
+    border-color: transparent;
+}
+
+body.image-edit-mode #editor-toolbar .toolbar-label,
+body.image-edit-mode #selection-label {
+    color: #64748b;
+}
+
+body.image-edit-mode #editor-toolbar .tool-btn {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+body.image-edit-mode #editor-toolbar .tool-btn:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+body.image-edit-mode #editor-toolbar .tool-btn.active {
+    background: #0f6bdd;
+    color: #fff;
+}
+
+#editor-toolbar.visible {
+    display: flex;
+}
+
+#editor-toolbar .separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+}
+
+.toolbar-label {
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    margin-right: 2px;
+}
+
+.selection-group {
+    min-width: 130px;
+    justify-content: center;
+}
+
+#selection-label {
+    font-size: 12px;
+    color: #64748b;
+    min-width: 110px;
+    text-align: center;
+}
+
+#selection-label.has-selection {
+    color: var(--text);
+}
+
+#vertex-tools,
+#draw-tools,
+#eraser-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#vertex-tools.hidden,
+#draw-tools.hidden,
+#eraser-tools.hidden {
+    display: none;
+}
+
+.brush-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+#editor-toolbar .tool-btn {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+#editor-toolbar .tool-btn:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+#editor-toolbar .tool-btn.active {
+    background: #0f6bdd;
+    color: #fff;
+}
+
+.brush-control input[type="range"] {
+    width: 84px;
+}
+
+#eraser-radius-value {
+    color: var(--text);
+    min-width: 20px;
+    text-align: right;
+}
+
+.image-edit-panel {
+    position: fixed;
+    right: 28px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 306px;
+    z-index: 90;
+}
+
+.image-edit-panel.hidden {
+    display: none;
+}
+
+.edit-card {
+    background: #ffffff;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
+    padding: 24px;
+}
+
+.edit-card-header {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.edit-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 6px;
+    background:
+        linear-gradient(135deg, rgba(225, 29, 72, 0.78), rgba(37, 99, 235, 0.12)),
+        linear-gradient(45deg, #64748b 25%, transparent 25%),
+        linear-gradient(-45deg, #64748b 25%, transparent 25%),
+        #e2e8f0;
+    background-size: auto, 12px 12px, 12px 12px, auto;
+}
+
+.brush-size-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.brush-size-btn {
+    min-height: 36px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #334155;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.brush-size-btn:hover {
+    background: #eef6ff;
+    border-color: #93c5fd;
+}
+
+.brush-size-btn.active {
+    background: #0f6bdd;
+    border-color: #0f6bdd;
+    color: #fff;
+}
+
+.edit-card h3 {
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #334155;
+}
+
+.edit-card-header span,
+.panel-range span,
+.magic-toggle {
+    color: #475569;
+    font-size: 13px;
+}
+
+.edit-mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.edit-mode-btn {
+    border: 2px solid #e2e8f0;
+    background: #fff;
+    color: #334155;
+    border-radius: 4px;
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.edit-mode-btn.active {
+    border-color: #0f6bdd;
+    color: #0f6bdd;
+}
+
+.mode-icon {
+    width: 28px;
+    height: 28px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.panel-range {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.panel-range strong {
+    color: #0f172a;
+    font-size: 12px;
+}
+
+.edit-card input[type="range"] {
+    width: 100%;
+    appearance: none;
+    background: #e2e8f0;
+    height: 4px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+}
+
+.edit-card input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #0f6bdd;
+    cursor: pointer;
+}
+
+.magic-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.magic-toggle input {
+    width: 34px;
+    height: 20px;
+    accent-color: #0f6bdd;
+}
+
+.brush-status {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.panel-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.image-edit-panel .btn-secondary {
+    background: #f8fafc;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+
+.image-edit-panel .btn-primary {
+    background: #0f6bdd;
+}
+
+@media (max-width: 1100px) {
+    .image-edit-panel {
+        right: 18px;
+        width: 260px;
+    }
+}
+
+@media (max-width: 820px) {
+    .image-edit-panel {
+        left: 16px;
+        right: 16px;
+        top: auto;
+        bottom: 72px;
+        transform: none;
+        width: auto;
+    }
+}
+
+body.image-edit-mode .inspector-panel {
+    display: none;
+}
+
+body.image-edit-mode .editor-layout {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.feature-details-dock {
+    position: fixed;
+    left: 28px;
+    top: 132px;
+    width: 330px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+    z-index: 86;
+    filter: drop-shadow(0 24px 60px rgba(15, 23, 42, 0.16));
+}
+
+.feature-details-dock.hidden {
+    display: none;
+}
+
+.feature-details-dock .panel {
+    margin-bottom: 0;
+}
+
+.feature-details-dock .panel-header {
+    align-items: flex-start;
+}
+
+@media (max-width: 1080px) {
+    .feature-details-dock {
+        left: 12px;
+        top: 108px;
+        width: min(330px, calc(100vw - 24px));
+    }
+}
+
+@media (max-width: 820px) {
+    .feature-details-dock {
+        left: 12px;
+        right: 12px;
+        top: auto;
+        bottom: 72px;
+        width: auto;
+        max-height: 55vh;
+    }
+}
+
+/* Canvas cursor based on tool */
+[data-tool="select"] { cursor: default; }
+[data-tool="edit"] { cursor: crosshair; }
+[data-tool="move"] { cursor: move; }
+[data-tool="scale"] { cursor: ns-resize; }
+[data-tool="draw-polygon"] { cursor: crosshair; }
+[data-tool="draw-point"] { cursor: crosshair; }
+[data-tool="erase"] { cursor: cell; }

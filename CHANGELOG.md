@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Combined changelog for Map to GeoJSON Converter.
 
+## [Unreleased] - 2026-06-05
+
+### 📄 Documentation
+
+- Merged local and HEAD versions of `README.md` to restore badges, project description, and examples.
+- Consolidated Quick Start, Local Startup, Server Startup, and Project Structure sections into a unified English `README.md`.
+- Translated full `README.md` to English and standardized commands for Linux/macOS.
+- Ensured test instructions (`src/test_smoke.py`) and venv usage are present and consistent.
+
 ## [TODO]
 - Add changes for next releases 
 

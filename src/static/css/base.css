@@ -1,0 +1,75 @@
+/**
+ * 🎨 CSS Variables & Base Styles
+ * Reset, variabili globali, tipografia
+ */
+
+:root {
+    --primary: #0f6bdd;
+    --primary-hover: #0b5fc6;
+    --primary-light: #eaf3ff;
+    --bg: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f8fafc;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --border: #cbd5e1;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --sidebar-width: 350px;
+    --transition: 0.2s ease;
+}
+
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+}
+
+html, body { 
+    height: 100%; 
+    overflow: hidden; 
+    font-family: 'Inter', -apple-system, sans-serif; 
+    background: #f8fafc; 
+    color: #0f172a; 
+    font-size: 14px; 
+}
+
+a { 
+    color: var(--primary); 
+    text-decoration: none; 
+}
+
+a:hover { 
+    text-decoration: underline; 
+}
+
+h1, h2, h3, h4 { 
+    font-weight: 600; 
+}
+
+button { 
+    font-family: inherit; 
+}
+
+::-webkit-scrollbar { 
+    width: 6px; 
+    height: 6px; 
+}
+
+::-webkit-scrollbar-track { 
+    background: transparent; 
+}
+
+::-webkit-scrollbar-thumb { 
+    background: var(--border); 
+    border-radius: var(--radius); 
+}
+
+::-webkit-scrollbar-thumb:hover { 
+    background: var(--text-muted); 
+}

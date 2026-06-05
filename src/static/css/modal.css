@@ -1,0 +1,201 @@
+/**
+ * 🗃️ Modal Styles
+ * Generic modal, preview modal, georef modal, rename modal
+ */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.38);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition);
+    padding: 20px;
+}
+
+.modal.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 650px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: var(--transition);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2);
+}
+
+.modal.visible .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: #ffffff;
+}
+
+.modal-header h3 {
+    font-size: 16px;
+}
+
+.modal-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    justify-content: flex-end;
+    background: #ffffff;
+}
+
+/* Close button */
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f1f5f9;
+    color: var(--text-secondary);
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: var(--transition);
+}
+
+.modal-close:hover {
+    background: #e2e8f0;
+    color: var(--text);
+}
+
+/* Georef modal */
+.modal-georef .modal-content {
+    max-width: 1120px;
+    height: 84vh;
+}
+
+.modal-georef .modal-body {
+    display: flex;
+    gap: 16px;
+    padding: 0;
+}
+
+#georef-map {
+    flex: 1;
+    min-height: 400px;
+    border-radius: 0;
+}
+
+.georef-image-overlay {
+    outline: 2px solid rgba(99, 102, 241, 0.85);
+    outline-offset: 0;
+    cursor: move;
+    user-select: none;
+}
+
+.georef-controls {
+    width: 250px;
+    padding: 16px;
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.georef-lock-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.georef-lock-row input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+}
+
+/* Preview modal */
+.modal-preview .modal-content {
+    max-width: 800px;
+}
+
+#geojson-preview {
+    background: var(--bg);
+    padding: 16px;
+    border-radius: var(--radius);
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+    max-height: 50vh;
+}
+
+/* Rename modal */
+.modal-rename .modal-content {
+    max-width: 400px;
+}
+
+.modal-rename .modal-body {
+    padding: 24px;
+}
+
+.modal-rename .form-group {
+    margin-bottom: 0;
+}
+
+/* Corner markers for georef */
+.corner-marker {
+    z-index: 1000;
+}
+
+.corner-handle {
+    width: 20px;
+    height: 20px;
+    background: var(--primary);
+    border: 2px solid white;
+    border-radius: 3px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.32);
+}
+
+.corner-handle.handle-n,
+.corner-handle.handle-s {
+    width: 28px;
+    height: 12px;
+    margin: 4px -4px;
+    border-radius: 999px;
+}
+
+.corner-handle.handle-e,
+.corner-handle.handle-w {
+    width: 12px;
+    height: 28px;
+    margin: -4px 4px;
+    border-radius: 999px;
+}

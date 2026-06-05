@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map to GeoJSON - Modular</title>
+    <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="/static/css/base.css?v=ui20">
+    <link rel="stylesheet" href="/static/css/layout.css?v=ui20">
+    <link rel="stylesheet" href="/static/css/components.css?v=ui20">
+    <link rel="stylesheet" href="/static/css/steps.css?v=ui20">
+    <link rel="stylesheet" href="/static/css/upload.css?v=ui20">
+    <link rel="stylesheet" href="/static/css/modal.css?v=ui20">
+    <link rel="stylesheet" href="/static/css/editor.css?v=ui20">
+    <link rel="stylesheet" href="/static/css/utilities.css?v=ui20">
+</head>
+<body>
+    <div class="app-container" id="app">
+        <header class="app-topbar">
+            <div class="brand-mark">
+                <span class="brand-icon">M</span>
+                <div>
+                    <strong>Map2Geo</strong>
+                    <span>Editor raster to GeoJSON</span>
+                </div>
+            </div>
+
+            <nav class="steps-nav">
+                <div class="step active" data-step="1">
+                    <div class="step-num"><span>1</span></div>
+                    <div class="step-label">Carica</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-num"><span>2</span></div>
+                    <div class="step-label">Segmenta</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-num"><span>3</span></div>
+                    <div class="step-label">Modifica</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-num"><span>4</span></div>
+                    <div class="step-label">Esporta</div>
+                </div>
+            </nav>
+
+            <div class="topbar-actions">
+                <button id="clear-btn" class="btn btn-secondary" disabled>Ricomincia</button>
+                <button id="sidebar-toggle" class="btn btn-primary">Pannello</button>
+            </div>
+        </header>
+
+        <div class="editor-layout">
+            <main class="canvas-wrapper" id="canvas-wrapper">
+                <div class="canvas-stage">
+                    <canvas id="main-canvas" class="main-canvas"></canvas>
+                    <svg id="polygon-editor"></svg>
+                </div>
+
+                <div id="empty-state" class="empty-state">
+                    <div class="empty-state-icon">+</div>
+                    <h2>Carica una mappa per iniziare</h2>
+                    <p>PNG, JPG o WebP fino a 25MB</p>
+                </div>
+
+                <div id="bottom-bar" class="bottom-bar hidden">
+                    <div class="info-group">
+                        <span class="info-item" id="image-info"></span>
+                    </div>
+                    <span class="info-item" id="cursor-info">x: 0, y: 0</span>
+                    <div class="info-group">
+                        <span class="info-item">Zoom <span id="zoom-level">100%</span></span>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="sidebar inspector-panel" id="sidebar">
+                <div class="sidebar-header">
+                    <div>
+                        <h2>Strumenti</h2>
+                        <span>Comandi contestuali</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-content">
+                    <div class="step-panel" id="panel-upload">
+                        <div class="panel">
+                            <h3 class="panel-title">Carica immagine</h3>
+                            <div class="upload-area" id="upload-area">
+                                <div class="upload-icon">+</div>
+                                <h3>Seleziona o trascina</h3>
+                                <p>La mappa verra' usata come base raster</p>
+                                <input type="file" id="file-input" class="file-input" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-panel hidden" id="panel-segment">
+                        <div class="panel">
+                            <h3 class="panel-title">Segmentazione</h3>
+
+                            <div class="form-group">
+                                <label>Sensibilita' colori</label>
+                                <div class="range-wrapper">
+                                    <input type="range" id="n-colors" min="10" max="80" value="40">
+                                    <span class="value" id="n-colors-value">40</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Dimensione minima</label>
+                                <div class="range-wrapper">
+                                    <input type="range" id="min-area" min="100" max="3000" value="500" step="100">
+                                    <span class="value" id="min-area-value">500</span>
+                                </div>
+                            </div>
+
+                            <button id="segment-btn" class="btn btn-primary btn-block">Segmenta automaticamente</button>
+                            <button id="click-mode-btn" class="btn btn-secondary btn-block mt-2">Aggiungi con click</button>
+                        </div>
+                    </div>
+
+                    <div class="step-panel hidden" id="panel-georef">
+                        <div id="feature-list-panel" class="panel feature-list-panel">
+                            <div class="panel-header compact">
+                                <div>
+                                    <h3 class="panel-title">Feature</h3>
+                                    <span id="feature-count-label" class="feature-kind">0 elementi</span>
+                                </div>
+                            </div>
+                            <div id="features-list" class="features-list empty">
+                                <div class="feature-empty">Segmenta o disegna una regione</div>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <h3 class="panel-title">Georeferenziazione</h3>
+
+                            <div class="form-group">
+                                <label>Area geografica</label>
+                                <select id="preset-select" class="form-control">
+                                    <option value="italy" selected>Italia</option>
+                                    <option value="europe">Europa</option>
+                                    <option value="world">Mondo</option>
+                                    <option value="custom">Personalizzato</option>
+                                </select>
+                            </div>
+
+                            <div class="input-grid mb-3">
+                                <div class="form-group">
+                                    <label>Nord</label>
+                                    <input type="number" id="bound-north" class="form-control" value="47.1" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Est</label>
+                                    <input type="number" id="bound-east" class="form-control" value="18.5" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Sud</label>
+                                    <input type="number" id="bound-south" class="form-control" value="35.5" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Ovest</label>
+                                    <input type="number" id="bound-west" class="form-control" value="6.6" step="0.1">
+                                </div>
+                            </div>
+
+                            <button id="georef-btn" class="btn btn-secondary btn-block">Posiziona su mappa</button>
+                        </div>
+
+                        <div class="panel">
+                            <h3 class="panel-title">Allineamento</h3>
+                            <button id="load-reference-btn" class="btn btn-secondary btn-block">Carica GeoJSON riferimento</button>
+                            <input type="file" id="reference-file" accept=".geojson,.json" style="display:none">
+
+                            <div id="reference-info" class="reference-info hidden mt-2">
+                                <span class="reference-name"></span>
+                                <button id="clear-reference-btn" class="btn btn-ghost btn-sm">x</button>
+                            </div>
+
+                            <div class="form-group mt-2">
+                                <label>Forza allineamento</label>
+                                <div class="range-wrapper">
+                                    <input type="range" id="snap-strength" min="0" max="1" value="0.5" step="0.1">
+                                    <span class="value" id="snap-strength-value">50%</span>
+                                </div>
+                            </div>
+
+                            <button id="align-btn" class="btn btn-primary btn-block" disabled>Allinea ai confini</button>
+                        </div>
+                    </div>
+
+                    <div class="step-panel hidden" id="panel-export">
+                        <div class="panel">
+                            <h3 class="panel-title">Esporta</h3>
+
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-value" id="stat-regions">0</div>
+                                    <div class="stat-label">Regioni</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="stat-points">0</div>
+                                    <div class="stat-label">Punti</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="stat-vertices">0</div>
+                                    <div class="stat-label">Vertici</div>
+                                </div>
+                            </div>
+
+                            <button id="export-btn" class="btn btn-primary btn-block btn-lg">Scarica GeoJSON</button>
+                            <div class="input-grid mt-2">
+                                <button id="preview-btn" class="btn btn-secondary">Anteprima</button>
+                                <button id="copy-btn" class="btn btn-secondary">Copia</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span id="loading-text">Elaborazione...</span>
+        <div class="progress-bar">
+            <div id="progress-fill"></div>
+        </div>
+    </div>
+
+    <!-- Editor Toolbar -->
+    <div id="editor-toolbar">
+        <div class="toolbar-group">
+            <span class="toolbar-label">Dettagli</span>
+            <button id="action-rename" class="tool-btn" title="Nome e proprieta'">✎</button>
+        </div>
+
+        <div class="toolbar-group">
+            <span class="toolbar-label">Crea</span>
+            <button id="tool-draw-polygon" class="tool-btn" title="Disegna poligono">⬡</button>
+            <button id="tool-draw-point" class="tool-btn" title="Aggiungi punto">●</button>
+        </div>
+
+        <div class="toolbar-group">
+            <span class="toolbar-label">Correggi immagine</span>
+            <button id="tool-eraser" class="tool-btn" title="Pennello correzione">◉</button>
+        </div>
+
+        <div class="toolbar-group selection-group">
+            <span id="selection-label">Nessuna selezione</span>
+        </div>
+
+        <div class="toolbar-group">
+            <span class="toolbar-label">Forma</span>
+            <button id="action-simplify" class="tool-btn" title="Semplifica">△</button>
+            <button id="action-smooth" class="tool-btn" title="Arrotonda">○</button>
+            <button id="action-duplicate" class="tool-btn" title="Duplica">⧉</button>
+            <button id="action-delete" class="tool-btn" title="Elimina">⌦</button>
+        </div>
+
+        <div class="toolbar-group">
+            <span class="toolbar-label">Trasforma</span>
+            <button id="tool-edit" class="tool-btn" title="Modifica vertici">□</button>
+            <button id="tool-move" class="tool-btn" title="Sposta">✥</button>
+            <button id="tool-scale" class="tool-btn" title="Scala">⤡</button>
+        </div>
+        
+        <!-- Vertex tools (shown in edit mode) -->
+        <div id="vertex-tools" class="hidden">
+            <div class="separator"></div>
+            <button id="action-add-vertex" class="tool-btn" title="Aggiungi vertice">+</button>
+            <button id="action-delete-vertex" class="tool-btn" title="Elimina vertice">−</button>
+            <button id="cancel-edit-btn" class="btn btn-ghost btn-sm">Esci</button>
+            <button id="save-polygon-btn" class="btn btn-primary btn-sm">Salva</button>
+        </div>
+
+        <!-- Draw tools (shown when drawing) -->
+        <div id="draw-tools" class="hidden">
+            <div class="separator"></div>
+            <span class="text-muted">Clicca per aggiungere punti</span>
+            <button id="finish-draw-btn" class="btn btn-primary btn-sm">Completa</button>
+            <button id="cancel-draw-btn" class="btn btn-ghost btn-sm">Annulla</button>
+        </div>
+    </div>
+
+    <aside id="image-edit-panel" class="image-edit-panel hidden">
+        <div class="edit-card">
+            <div class="edit-card-header">
+                <div class="edit-thumb"></div>
+                <div>
+                    <h3>Pennello correzione</h3>
+                    <span>Marca l'area da ignorare e risegmenta</span>
+                </div>
+            </div>
+
+            <div class="brush-size-grid" aria-label="Dimensione pennello">
+                <button class="brush-size-btn" type="button" data-radius="10">Fine</button>
+                <button class="brush-size-btn active" type="button" data-radius="18">Medio</button>
+                <button class="brush-size-btn" type="button" data-radius="36">Largo</button>
+            </div>
+
+            <div class="edit-mode-grid">
+                <button id="erase-mode-erase" class="edit-mode-btn active" type="button">
+                    <span class="mode-icon">−</span>
+                    <span>Ignora</span>
+                </button>
+                <button id="erase-mode-restore" class="edit-mode-btn" type="button">
+                    <span class="mode-icon">+</span>
+                    <span>Ripristina</span>
+                </button>
+            </div>
+
+            <label class="panel-range" for="eraser-radius">
+                <span>Dimensione pennello</span>
+                <strong id="eraser-radius-value">18</strong>
+            </label>
+            <input type="range" id="eraser-radius" min="6" max="80" value="18" step="2">
+
+            <label class="magic-toggle">
+                <input id="magic-brush-toggle" type="checkbox" checked>
+                    <span>Usa un seed alternativo</span>
+            </label>
+
+            <div class="brush-status">
+                <span id="eraser-strokes-count">0 aree evidenziate</span>
+            </div>
+
+            <div class="panel-actions">
+                <button id="cancel-eraser-btn" class="btn btn-secondary btn-block">Annulla</button>
+                <button id="apply-eraser-btn" class="btn btn-primary btn-block">Risegmenta</button>
+            </div>
+        </div>
+    </aside>
+
+    <aside id="feature-details-dock" class="feature-details-dock hidden">
+        <div id="feature-properties-panel" class="panel feature-panel">
+            <div class="panel-header compact">
+                <div>
+                    <h3 class="panel-title">Dettagli regione</h3>
+                    <span id="feature-kind-label" class="feature-kind">Nessuna selezione</span>
+                </div>
+                <button id="feature-dock-close" class="btn btn-ghost btn-sm" type="button">Chiudi</button>
+            </div>
+
+            <div class="form-group">
+                <label for="feature-name-input">Nome</label>
+                <input type="text" id="feature-name-input" class="form-control" placeholder="Nome feature">
+            </div>
+
+            <div class="input-grid">
+                <div class="form-group">
+                    <label for="feature-type-input">Tipo</label>
+                    <input type="text" id="feature-type-input" class="form-control" placeholder="area">
+                </div>
+                <div class="form-group">
+                    <label for="feature-color-input">Colore</label>
+                    <input type="color" id="feature-color-input" class="form-control color-control" value="#3b82f6">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="feature-description-input">Descrizione</label>
+                <textarea id="feature-description-input" class="form-control" rows="3" placeholder="Note, fonte, periodo storico..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="feature-props-input">Proprieta' JSON</label>
+                <textarea id="feature-props-input" class="form-control code-control" rows="5" spellcheck="false" placeholder='{"fonte":"", "anno": ""}'></textarea>
+            </div>
+
+            <div class="feature-meta-grid">
+                <div>
+                    <span>Area px</span>
+                    <strong id="feature-area-value">-</strong>
+                </div>
+                <div>
+                    <span>Vertici</span>
+                    <strong id="feature-vertices-value">-</strong>
+                </div>
+            </div>
+
+            <button id="feature-save-btn" class="btn btn-primary btn-block mt-2">Salva dettagli</button>
+        </div>
+    </aside>
+    
+    <!-- Hidden select tool for compatibility -->
+    <button id="tool-select" style="display:none"></button>
+
+    <!-- Context Menu -->
+    <div id="context-menu">
+        <div class="ctx-item" id="ctx-rename">✏️ Rinomina</div>
+        <div class="ctx-item" id="ctx-edit">📐 Modifica vertici</div>
+        <div class="ctx-item" id="ctx-move">✥ Sposta</div>
+        <div class="ctx-item" id="ctx-duplicate">📋 Duplica</div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item" id="ctx-simplify">△ Semplifica</div>
+        <div class="ctx-item" id="ctx-smooth">○ Arrotonda</div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item danger" id="ctx-delete">🗑️ Elimina</div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="modal modal-preview">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Anteprima GeoJSON</h3>
+                <button id="modal-close" class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <pre id="geojson-preview"></pre>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-copy" class="btn btn-secondary">Copia</button>
+                <button id="modal-download" class="btn btn-primary">Scarica</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Georef Modal -->
+    <div id="georef-modal" class="modal modal-georef">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Posiziona su Mappa</h3>
+                <button id="georef-modal-close" class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="georef-map"></div>
+                <div class="georef-controls">
+                    <div class="form-group">
+                        <label>Rotazione</label>
+                        <div class="range-wrapper">
+                            <input type="range" id="georef-rotation" min="-180" max="180" value="0" step="1">
+                            <span class="value" id="georef-rotation-value">0°</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Opacità</label>
+                        <div class="range-wrapper">
+                            <input type="range" id="georef-opacity" min="0.1" max="1" value="0.7" step="0.1">
+                            <span class="value" id="georef-opacity-value">70%</span>
+                        </div>
+                    </div>
+                    <label class="checkbox-row georef-lock-row">
+                        <input type="checkbox" id="georef-lock-aspect" checked>
+                        <span>Angoli proporzionali</span>
+                    </label>
+                    <p class="text-muted">Trascina l'immagine per spostarla. Usa i lati per stirarla in verticale o orizzontale.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="georef-cancel" class="btn btn-secondary">Annulla</button>
+                <button id="georef-apply" class="btn btn-primary">Applica</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Cookie Banner -->
+    <div id="cookie-banner">
+        <p class="cookie-text">
+            Utilizziamo cookie essenziali per il funzionamento dell'app e cookie analitici per migliorare l'esperienza.
+            <a href="/privacy" target="_blank">Privacy Policy</a>
+        </p>
+        <div class="cookie-buttons">
+            <button id="cookie-essential" class="btn btn-secondary btn-sm">Solo Essenziali</button>
+            <button id="cookie-accept" class="btn btn-primary btn-sm">Accetta Tutti</button>
+        </div>
+    </div>
+
+    <!-- External Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Modular JavaScript -->
+    <script type="module" src="/static/js/app.js?v=ui20"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+/**
+ * 🔢 Steps Navigation
+ * Multi-step wizard UI
+ */
+
+.steps-nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.step:hover {
+    background: var(--border);
+}
+
+.step-num {
+    width: 24px;
+    height: 24px;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    transition: var(--transition);
+}
+
+.step-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.step.active .step-num {
+    background: var(--primary);
+    color: white;
+}
+
+.step.active .step-label {
+    color: var(--text);
+}
+
+.step.completed .step-num {
+    background: var(--success);
+    color: white;
+}
+
+.step.completed .step-num::after {
+    content: '✓';
+    font-size: 14px;
+}
+
+.step.completed .step-num span {
+    display: none;
+}
+
+.step::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary);
+    transform: scaleX(0);
+    transition: var(--transition);
+}
+
+.step.active::after {
+    transform: scaleX(1);
+}
+
+/* Step Panels */
+.step-panel {
+    animation: fadeIn 0.2s ease;
+}
+
+.step-panel.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Top workflow tabs */
+.app-topbar .steps-nav {
+    margin: 0;
+    justify-content: center;
+    gap: 6px;
+}
+
+.app-topbar .step {
+    flex: 0 0 auto;
+    min-width: 116px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: transparent;
+    border-radius: 999px;
+    color: #475569;
+}
+
+.app-topbar .step:hover {
+    background: #f1f5f9;
+}
+
+.app-topbar .step-num {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.app-topbar .step-label {
+    color: inherit;
+    font-size: 13px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 600;
+}
+
+.app-topbar .step.active {
+    background: #eaf3ff;
+    color: #0f6bdd;
+}
+
+.app-topbar .step.active .step-num {
+    background: #0f6bdd;
+    color: #fff;
+}
+
+.app-topbar .step.completed .step-num {
+    background: #16a34a;
+}
+
+.app-topbar .step::after {
+    display: none;
+}
